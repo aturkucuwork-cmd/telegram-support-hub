@@ -1,0 +1,20 @@
+import assert from "node:assert/strict";
+import { access, readFile } from "node:fs/promises";
+import test from "node:test";
+
+test("builds the RelayDesk support application", async () => {
+  const [page, desk, webhook, worker] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/support-desk.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
+    access(new URL("../dist/server/index.js", import.meta.url)),
+  ]);
+
+  assert.match(page, /RelayDesk/);
+  assert.match(desk, /EKİP GELEN KUTUSU/);
+  assert.match(desk, /Webhook’u etkinleştir/);
+  assert.match(webhook, /x-telegram-bot-api-secret-token/);
+  assert.match(webhook, /business_message/);
+  assert.match(webhook, /edited_message/);
+  assert.equal(worker, undefined);
+});
