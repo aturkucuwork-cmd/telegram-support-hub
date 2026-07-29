@@ -14,6 +14,7 @@ export type SystemStatus = {
   configured: boolean;
   connected: boolean;
   connection: Connection | null;
+  deliveryMode: "polling" | "webhook";
   webhookUrl: string;
   actor: Actor;
 };

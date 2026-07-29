@@ -16,12 +16,15 @@ export async function GET(request: Request) {
     .orderBy(desc(telegramConnections.updatedAt))
     .limit(1);
   const config = telegramConfig();
-  const origin = new URL(request.url).origin;
+  const requestUrl = new URL(request.url);
+  const origin = requestUrl.origin;
+  const isLocal = requestUrl.hostname === "localhost" || requestUrl.hostname === "127.0.0.1";
 
   return Response.json({
     configured: Boolean(config.botToken && config.webhookSecret),
     connected: Boolean(connection?.isEnabled),
     connection: connection ?? null,
+    deliveryMode: isLocal ? "polling" : "webhook",
     webhookUrl: `${origin}/api/telegram/webhook`,
     actor,
   });

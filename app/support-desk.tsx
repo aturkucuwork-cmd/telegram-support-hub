@@ -384,18 +384,19 @@ function MessageContent({ message }: { message: Message }) {
 }
 
 function SetupPanel({ status, copied, onCopy, onConfigure }: { status: SystemStatus; copied: boolean; onCopy: () => void; onConfigure: () => void }) {
+  const isLocalPolling = status.deliveryMode === "polling";
   return (
     <div className="setup-wrap">
       <div className="setup-orbit"><span>R</span><i /><b /></div>
       <p className="eyebrow">BAĞLANTI MERKEZİ</p>
-      <h1>{status.connected ? "Telegram bağlı. İlk mesajı bekliyoruz." : "Telegram hesabınızı RelayDesk’e bağlayın."}</h1>
+      <h1>{status.connected ? "Telegram bağlı. İlk mesajı bekliyoruz." : isLocalPolling ? "Yerel dinleyici hazır. İlk müşteri mesajını bekliyoruz." : "Telegram hesabınızı RelayDesk’e bağlayın."}</h1>
       <p className="setup-lead">Tek destek hesabınız çalışmaya devam eder; ekip üyeleri Telegram’a giriş yapmadan bu panelden yanıt verir.</p>
       <div className="setup-steps">
         <article className={status.configured ? "done" : "current"}><span>1</span><div><strong>Bot anahtarını ekleyin</strong><p>BotFather token’ı ve webhook gizli anahtarı sunucuya tanımlanır.</p></div><b>{status.configured ? "✓" : "01"}</b></article>
-        <article className={status.connected ? "done" : status.configured ? "current" : ""}><span>2</span><div><strong>Webhook’u etkinleştirin</strong><p>Telegram yeni mesajları güvenli biçimde bu adrese gönderir.</p><button className="webhook-copy" onClick={onCopy}>{copied ? "Kopyalandı" : status.webhookUrl}</button></div><b>{status.connected ? "✓" : "02"}</b></article>
-        <article className={status.connected ? "done" : ""}><span>3</span><div><strong>Hesaptan botu bağlayın</strong><p>Telegram → Ayarlar → Telegram Business → Sohbet Botları bölümünden botu seçip yanıt yetkisini verin.</p></div><b>{status.connected ? "✓" : "03"}</b></article>
+        <article className={isLocalPolling && status.configured ? "done" : status.connected ? "done" : status.configured ? "current" : ""}><span>2</span><div><strong>{isLocalPolling ? "Yerel mesaj dinleyicisini açık tutun" : "Webhook’u etkinleştirin"}</strong><p>{isLocalPolling ? "RelayDesk Telegram güncellemelerini long polling ile alır; Telegram Bağlantısı terminali açık kalmalıdır." : "Telegram yeni mesajları güvenli biçimde bu adrese gönderir."}</p>{!isLocalPolling ? <button className="webhook-copy" onClick={onCopy}>{copied ? "Kopyalandı" : status.webhookUrl}</button> : null}</div><b>{isLocalPolling && status.configured ? "✓" : status.connected ? "✓" : "02"}</b></article>
+        <article className={status.connected ? "done" : isLocalPolling && status.configured ? "current" : ""}><span>3</span><div><strong>{isLocalPolling ? "İlk test mesajını gönderin" : "Hesaptan botu bağlayın"}</strong><p>{isLocalPolling ? "Başka bir Telegram hesabından destek hesabına yeni bir mesaj gönderin; sohbet otomatik olarak burada görünür." : "Telegram → Ayarlar → Telegram Business → Sohbet Botları bölümünden botu seçip yanıt yetkisini verin."}</p></div><b>{status.connected ? "✓" : "03"}</b></article>
       </div>
-      {status.configured && !status.connected ? <button className="primary-button setup-action" onClick={onConfigure}>Webhook’u etkinleştir</button> : null}
+      {status.configured && !status.connected && !isLocalPolling ? <button className="primary-button setup-action" onClick={onConfigure}>Webhook’u etkinleştir</button> : null}
       {!status.configured ? <div className="setup-note">Token hiçbir zaman tarayıcıya gönderilmez; yalnızca güvenli sunucu değişkeninde tutulur.</div> : null}
       <div className="setup-note">Grup desteği için aynı botu gruplara ekleyin; tüm mesajları görmek için BotFather’da Group Privacy’yi kapatın veya botu yönetici yapın. Grup yanıtları bot adına gönderilir.</div>
     </div>

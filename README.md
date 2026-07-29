@@ -43,6 +43,28 @@ npm run dev
 
 Ardından `http://localhost:3000` adresini açın. Yerel D1 verisi vinext geliştirme ortamı tarafından sağlanır.
 
+## Premium olmadan Business bot bağlama
+
+Telegram uygulaması bağlı bot ekranını ücretli pakete yönlendiriyorsa, `my.telegram.org` üzerinden alınan `api_id` ve `api_hash` ile tek kullanımlık bağlantı aracı çalıştırılabilir:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\connect-telegram-business.ps1
+```
+
+Araç bilgileri yalnızca terminal belleğinde tutar, oturum dosyası oluşturmaz ve bot bağlandıktan sonra Telegram kullanıcı oturumunu kapatır. `api_hash`, giriş kodu ve iki aşamalı doğrulama parolası kaynak dosyalara yazılmaz.
+
+## Public adres olmadan yerel Telegram bağlantısı
+
+Business bot bağlantısı tamamlandıktan sonra yerel RelayDesk'i başlatmak için:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-local-telegram.ps1
+```
+
+İlk çalıştırmada BotFather token'ı gizli olarak sorulur. Token yalnızca Git tarafından yok sayılan `.env.local` dosyasına kaydedilir. Araç RelayDesk sunucusunu yeni ayarlarla başlatır ve Telegram güncellemelerini `getUpdates` long polling yöntemiyle yerel webhook'a aktarır.
+
+`RelayDesk Telegram Bağlantısı` terminali açık kaldığı sürece yeni mesajlar alınır. Daha önce botta bir public webhook tanımlıysa araç, onu kaldırmadan önce onay ister ve bekleyen güncellemeleri silmez.
+
 ## Kontroller
 
 ```bash
