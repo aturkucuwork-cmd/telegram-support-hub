@@ -54,8 +54,8 @@ button { color: inherit; }
 .primary-button { min-height: 45px; display: inline-flex; align-items: center; justify-content: center; padding: 0 20px; border: 0; border-radius: 11px; background: var(--accent); color: white; font-weight: 720; text-decoration: none; cursor: pointer; transition: .18s ease; }
 .primary-button:hover { background: var(--accent-dark); transform: translateY(-1px); }
 
-.desk-shell { height: 100vh; min-width: 0; background: var(--paper); }
-.topbar { height: 62px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.96); }
+.desk-shell { height: 100vh; min-width: 0; display: flex; flex-direction: column; background: var(--paper); }
+.topbar { height: 62px; display: flex; align-items: center; justify-content: space-between; flex: 0 0 62px; padding: 0 20px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.96); }
 .topbar-actions { display: flex; align-items: center; gap: 14px; }
 .topbar-team-button { min-height: 31px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fafcfb; color: #63716b; font-size: 9px; font-weight: 700; cursor: pointer; }
 .topbar-team-button:hover { border-color: #a5d1bd; color: var(--accent-dark); }
@@ -70,7 +70,9 @@ button { color: inherit; }
 .agent-avatar.small { width: 30px; height: 30px; }
 .agent-avatar.tiny { width: 26px; height: 26px; font-size: 9px; }
 
-.workspace { height: calc(100vh - 62px); display: grid; grid-template-columns: 220px 340px minmax(390px, 1fr) 250px; min-width: 0; }
+.workspace { min-width: 0; min-height: 0; display: grid; grid-template-columns: 220px 340px minmax(390px, 1fr) 250px; flex: 1; }
+.group-access-warning { min-height: 38px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; gap: 7px; padding: 7px 16px; border-bottom: 1px solid #efd7a5; background: #fff7e7; color: #72571d; font-size: 9px; text-align: center; }
+.group-access-warning strong { color: #664a0e; }
 .nav-rail, .conversation-pane, .chat-pane, .details-pane { min-width: 0; min-height: 0; }
 .nav-rail { display: flex; flex-direction: column; padding: 22px 12px 14px; border-right: 1px solid var(--line); background: #f8faf9; }
 .nav-heading { padding: 0 12px 12px; color: #99a39e; font-size: 9px; font-weight: 780; letter-spacing: .14em; }

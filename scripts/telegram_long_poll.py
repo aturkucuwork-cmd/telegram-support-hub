@@ -25,6 +25,8 @@ ALLOWED_UPDATES = [
     "deleted_business_messages",
     "message",
     "edited_message",
+    "channel_post",
+    "edited_channel_post",
 ]
 
 
@@ -164,6 +166,12 @@ def run() -> int:
     )
     print(f"Telegram botu doğrulandı: @{username}")
     print(connection_text)
+    if not bot.get("can_read_all_group_messages"):
+        print(
+            "UYARI: Botun Grup Gizliliği açık. Tüm grup mesajları için "
+            "@BotFather > /setprivacy > Disable yapın ve botu mevcut gruplara "
+            "yeniden ekleyin veya botu grup yöneticisi yapın."
+        )
     print("Mesaj dinleme başladı. Durdurmak için Ctrl+C kullanın.")
     print("Mesaj içerikleri ve token bu terminale yazdırılmaz.")
 

@@ -3,7 +3,7 @@ import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("builds the RelayDesk support application", async () => {
-  const [page, desk, messageLogPanel, messageLogApi, reply, mediaReply, webhook, worker] = await Promise.all([
+  const [page, desk, messageLogPanel, messageLogApi, reply, mediaReply, webhook, configure, status, worker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/support-desk.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/message-log-panel.tsx", import.meta.url), "utf8"),
@@ -11,6 +11,8 @@ test("builds the RelayDesk support application", async () => {
     readFile(new URL("../app/api/reply/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/reply/media/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/telegram/configure/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/status/route.ts", import.meta.url), "utf8"),
     access(new URL("../dist/server/index.js", import.meta.url)),
   ]);
 
@@ -33,5 +35,11 @@ test("builds the RelayDesk support application", async () => {
   assert.match(webhook, /x-telegram-bot-api-secret-token/);
   assert.match(webhook, /business_message/);
   assert.match(webhook, /edited_message/);
+  assert.match(webhook, /channel_post/);
+  assert.match(webhook, /edited_channel_post/);
+  assert.match(webhook, /delete\(webhookUpdates\)/);
+  assert.match(configure, /channel_post/);
+  assert.match(status, /groupMessageAccess/);
+  assert.match(desk, /Grup mesajları sınırlı/);
   assert.equal(worker, undefined);
 });

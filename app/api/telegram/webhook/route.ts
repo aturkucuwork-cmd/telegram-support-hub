@@ -27,6 +27,8 @@ type TelegramUpdate = {
   edited_business_message?: TelegramMessage;
   message?: TelegramMessage;
   edited_message?: TelegramMessage;
+  channel_post?: TelegramMessage;
+  edited_channel_post?: TelegramMessage;
   deleted_business_messages?: {
     business_connection_id: string;
     chat: TelegramChat;
@@ -59,68 +61,96 @@ export async function POST(request: Request) {
     .returning({ updateId: webhookUpdates.updateId });
   if (!inserted.length) return Response.json({ ok: true, duplicate: true });
 
-  const connection = update.business_connection;
-  if (connection) {
-    const values = {
-      telegramUserId:
-        connection.user.id === undefined ? null : String(connection.user.id),
-      displayName: personName(connection.user),
-      username: connection.user.username ?? null,
-      rightsJson: JSON.stringify(connection.rights ?? {}),
-      isEnabled: connection.is_enabled,
-      updatedAt: new Date().toISOString(),
-    };
-    await db
-      .insert(telegramConnections)
-      .values({ id: connection.id, ...values })
-      .onConflictDoUpdate({
-        target: telegramConnections.id,
-        set: values,
+  try {
+    const connection = update.business_connection;
+    if (connection) {
+      const values = {
+        telegramUserId:
+          connection.user.id === undefined ? null : String(connection.user.id),
+        displayName: personName(connection.user),
+        username: connection.user.username ?? null,
+        rightsJson: JSON.stringify(connection.rights ?? {}),
+        isEnabled: connection.is_enabled,
+        updatedAt: new Date().toISOString(),
+      };
+      await db
+        .insert(telegramConnections)
+        .values({ id: connection.id, ...values })
+        .onConflictDoUpdate({
+          target: telegramConnections.id,
+          set: values,
+        });
+    }
+
+    if (update.business_message) {
+      await storeTelegramMessage({
+        message: update.business_message,
+        updateId: update.update_id,
       });
-  }
+    }
+    if (update.edited_business_message) {
+      await storeTelegramMessage({
+        message: update.edited_business_message,
+        updateId: update.update_id,
+        edited: true,
+      });
+    }
+    if (
+      update.message &&
+      ["group", "supergroup"].includes(update.message.chat.type)
+    ) {
+      await storeTelegramMessage({
+        message: update.message,
+        updateId: update.update_id,
+        connectionId: BOT_GROUP_CONNECTION_ID,
+      });
+    }
+    if (
+      update.edited_message &&
+      ["group", "supergroup"].includes(update.edited_message.chat.type)
+    ) {
+      await storeTelegramMessage({
+        message: update.edited_message,
+        updateId: update.update_id,
+        connectionId: BOT_GROUP_CONNECTION_ID,
+        edited: true,
+      });
+    }
+    if (update.channel_post) {
+      await storeTelegramMessage({
+        message: update.channel_post,
+        updateId: update.update_id,
+        connectionId: BOT_GROUP_CONNECTION_ID,
+      });
+    }
+    if (update.edited_channel_post) {
+      await storeTelegramMessage({
+        message: update.edited_channel_post,
+        updateId: update.update_id,
+        connectionId: BOT_GROUP_CONNECTION_ID,
+        edited: true,
+      });
+    }
+    if (update.deleted_business_messages) {
+      await markDeletedMessages({
+        connectionId: update.deleted_business_messages.business_connection_id,
+        chatId: String(update.deleted_business_messages.chat.id),
+        messageIds: update.deleted_business_messages.message_ids,
+      });
+    }
 
-  if (update.business_message) {
-    await storeTelegramMessage({
-      message: update.business_message,
-      updateId: update.update_id,
-    });
-  }
-  if (update.edited_business_message) {
-    await storeTelegramMessage({
-      message: update.edited_business_message,
-      updateId: update.update_id,
-      edited: true,
-    });
-  }
-  if (update.message && ["group", "supergroup"].includes(update.message.chat.type)) {
-    await storeTelegramMessage({
-      message: update.message,
-      updateId: update.update_id,
-      connectionId: BOT_GROUP_CONNECTION_ID,
-    });
-  }
-  if (update.edited_message && ["group", "supergroup"].includes(update.edited_message.chat.type)) {
-    await storeTelegramMessage({
-      message: update.edited_message,
-      updateId: update.update_id,
-      connectionId: BOT_GROUP_CONNECTION_ID,
-      edited: true,
-    });
-  }
-  if (update.deleted_business_messages) {
-    await markDeletedMessages({
-      connectionId: update.deleted_business_messages.business_connection_id,
-      chatId: String(update.deleted_business_messages.chat.id),
-      messageIds: update.deleted_business_messages.message_ids,
-    });
-  }
+    if (connection && !connection.is_enabled) {
+      await db
+        .update(telegramConnections)
+        .set({ isEnabled: false, updatedAt: new Date().toISOString() })
+        .where(eq(telegramConnections.id, connection.id));
+    }
 
-  if (connection && !connection.is_enabled) {
+    return Response.json({ ok: true });
+  } catch (error) {
     await db
-      .update(telegramConnections)
-      .set({ isEnabled: false, updatedAt: new Date().toISOString() })
-      .where(eq(telegramConnections.id, connection.id));
+      .delete(webhookUpdates)
+      .where(eq(webhookUpdates.updateId, update.update_id));
+    throw error;
   }
-
-  return Response.json({ ok: true });
 }

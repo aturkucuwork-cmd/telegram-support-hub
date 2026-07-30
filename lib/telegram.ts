@@ -5,6 +5,8 @@ export type TelegramUser = {
   first_name?: string;
   last_name?: string;
   username?: string;
+  can_join_groups?: boolean;
+  can_read_all_group_messages?: boolean;
 };
 
 export type TelegramChat = {
@@ -182,12 +184,14 @@ export function parseContent(message: TelegramMessage): ParsedContent {
 export async function telegramApi<T>(
   method: string,
   payload: Record<string, unknown>,
+  options?: { signal?: AbortSignal },
 ): Promise<T> {
   const { botToken } = telegramConfig();
   if (!botToken) throw new Error("Telegram bot token henüz ayarlanmadı.");
 
   const response = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
     method: "POST",
+    signal: options?.signal,
     headers: { "content-type": "application/json" },
     body: JSON.stringify(payload),
   });

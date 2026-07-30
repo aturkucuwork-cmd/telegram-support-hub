@@ -24,6 +24,8 @@ export async function POST(request: Request) {
       "deleted_business_messages",
       "message",
       "edited_message",
+      "channel_post",
+      "edited_channel_post",
     ],
     drop_pending_updates: false,
   });

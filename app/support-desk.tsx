@@ -141,21 +141,26 @@ export function SupportDesk() {
         .catch((cause) => active && setError(cause instanceof Error ? cause.message : "Bir hata oluştu."))
         .finally(() => active && setLoading(false));
     }, 0);
-    const timer = window.setInterval(() => {
-      void loadStatus();
-      void loadConversations();
-    }, 4000);
+    const conversationTimer = window.setInterval(
+      () => void loadConversations(),
+      2000,
+    );
+    const statusTimer = window.setInterval(
+      () => void loadStatus(),
+      10_000,
+    );
     return () => {
       active = false;
       window.clearTimeout(bootTimer);
-      window.clearInterval(timer);
+      window.clearInterval(conversationTimer);
+      window.clearInterval(statusTimer);
     };
   }, [loadConversations, loadStatus]);
 
   useEffect(() => {
     if (!selectedId) return;
     const initialTimer = window.setTimeout(() => void loadMessages(selectedId), 0);
-    const timer = window.setInterval(() => void loadMessages(selectedId), 3000);
+    const timer = window.setInterval(() => void loadMessages(selectedId), 1200);
     return () => {
       window.clearTimeout(initialTimer);
       window.clearInterval(timer);
@@ -343,6 +348,12 @@ export function SupportDesk() {
           <button className="agent-avatar account-avatar" title={`${actor?.email} · Çıkış yap`} aria-label="Oturumu kapat" onClick={() => void logout()}>{initials(actor?.displayName || "D")}</button>
         </div>
       </header>
+      {status.groupMessageAccess === "limited" ? (
+        <div className="group-access-warning" role="status">
+          <strong>Grup mesajları sınırlı.</strong>
+          <span>@BotFather → /setprivacy → botu seçin → Disable; ardından botu mevcut gruplara yeniden ekleyin veya grup yöneticisi yapın.</span>
+        </div>
+      ) : null}
 
       <div className="workspace">
         <aside className="nav-rail" aria-label="Gelen kutusu filtreleri">

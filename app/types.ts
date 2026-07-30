@@ -18,6 +18,7 @@ export type SystemStatus = {
   connection: Connection | null;
   deliveryMode: "polling" | "webhook";
   webhookUrl: string;
+  groupMessageAccess: "all" | "limited" | "unknown";
   actor: Actor;
 };
 
