@@ -2,6 +2,7 @@ import { ensureSchema } from "@/db/ensure";
 import { requireAdmin } from "@/lib/auth";
 import {
   listMessageLogs,
+  listMessageLogUsers,
   MESSAGE_LOG_PAGE_SIZE,
   MESSAGE_LOG_RETENTION_DAYS,
   pruneExpiredMessageLogs,
@@ -20,10 +21,21 @@ export async function GET(request: Request) {
       ? Math.min(requestedPage, 10_000)
       : 1;
   const query = (url.searchParams.get("q") || "").trim().slice(0, 120);
-  const result = await listMessageLogs({ page, query });
+  const actorEmail = (url.searchParams.get("actor_email") || "")
+    .trim()
+    .toLowerCase()
+    .slice(0, 254);
+  const [users, result] = await Promise.all([
+    listMessageLogUsers(),
+    actorEmail
+      ? listMessageLogs({ page, query, actorEmail })
+      : Promise.resolve({ logs: [], total: 0 }),
+  ]);
 
   return Response.json({
     ...result,
+    users,
+    selectedActorEmail: actorEmail || null,
     page,
     pageSize: MESSAGE_LOG_PAGE_SIZE,
     retentionDays: MESSAGE_LOG_RETENTION_DAYS,

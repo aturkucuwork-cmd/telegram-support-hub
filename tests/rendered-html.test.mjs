@@ -20,10 +20,13 @@ test("builds the RelayDesk support application", async () => {
   assert.match(desk, /↩ Yanıtla/);
   assert.match(desk, /replyToMessageId/);
   assert.match(desk, /Mesaj logları/);
-  assert.match(messageLogPanel, /30 GÜNLÜK KAYIT/);
-  assert.match(messageLogPanel, /Fotoğraf ve videolar kaydedilmez/);
+  assert.match(messageLogPanel, /KİŞİ BAZLI · SON 30 GÜN/);
+  assert.match(messageLogPanel, /Bir ekip üyesi seçin/);
+  assert.match(messageLogPanel, /dayGroups/);
   assert.match(messageLogApi, /requireAdmin/);
   assert.match(messageLogApi, /MESSAGE_LOG_RETENTION_DAYS/);
+  assert.match(messageLogApi, /actor_email/);
+  assert.match(messageLogApi, /listMessageLogUsers/);
   assert.match(reply, /reply_parameters/);
   assert.match(reply, /messageLogs/);
   assert.match(mediaReply, /reply_parameters/);

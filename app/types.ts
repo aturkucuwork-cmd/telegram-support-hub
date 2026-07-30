@@ -62,3 +62,13 @@ export type MessageLog = {
   messageText: string;
   sentAt: string;
 };
+
+export type MessageLogUser = {
+  id: number;
+  email: string;
+  displayName: string;
+  role: "admin" | "agent";
+  isActive: boolean;
+  messageCount: number;
+  lastMessageAt: string | null;
+};
