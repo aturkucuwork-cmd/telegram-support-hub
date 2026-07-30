@@ -33,6 +33,7 @@ export const conversations = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     connectionId: text("connection_id").notNull(),
     telegramChatId: text("telegram_chat_id").notNull(),
+    topicId: text("topic_id").notNull().default(""),
     type: text("type").notNull().default("private"),
     title: text("title").notNull(),
     username: text("username"),
@@ -46,9 +47,10 @@ export const conversations = sqliteTable(
     updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [
-    uniqueIndex("conversations_connection_chat_unique").on(
+    uniqueIndex("conversations_connection_chat_topic_unique").on(
       table.connectionId,
       table.telegramChatId,
+      table.topicId,
     ),
     index("conversations_last_message_idx").on(table.lastMessageAt),
     index("conversations_assignee_idx").on(table.assignedToEmail),

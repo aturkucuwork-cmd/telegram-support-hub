@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import type { Conversation, Message, SystemStatus } from "./types";
 
@@ -62,11 +62,13 @@ export function SupportDesk() {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [mobileListOpen, setMobileListOpen] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadStatus = useCallback(async () => {
     const response = await fetch("/api/status", { cache: "no-store" });
@@ -163,24 +165,63 @@ export function SupportDesk() {
   async function sendReply(event: FormEvent) {
     event.preventDefault();
     const text = draft.trim();
-    if (!selected || !text || sending) return;
+    if (!selected || (!text && !attachment) || sending) return;
     setSending(true);
     setError(null);
     try {
-      const response = await fetch("/api/reply", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ conversationId: selected.id, text }),
-      });
+      let response: Response;
+      if (attachment) {
+        const formData = new FormData();
+        formData.set("conversationId", String(selected.id));
+        formData.set("caption", text);
+        formData.set("file", attachment, attachment.name);
+        response = await fetch("/api/reply/media", {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        response = await fetch("/api/reply", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ conversationId: selected.id, text }),
+        });
+      }
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error || "Mesaj gönderilemedi.");
       setDraft("");
+      setAttachment(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       await Promise.all([loadMessages(selected.id), loadConversations()]);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Mesaj gönderilemedi.");
     } finally {
       setSending(false);
     }
+  }
+
+  function selectAttachment(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) return;
+    const isPhoto = ["image/jpeg", "image/png", "image/webp"].includes(file.type);
+    const isVideo = file.type === "video/mp4";
+    const limit = isPhoto ? 10 * 1024 * 1024 : 50 * 1024 * 1024;
+    if (!isPhoto && !isVideo) {
+      setError("Yalnızca JPG, PNG, WEBP fotoğraf veya MP4 video seçebilirsiniz.");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > limit) {
+      setError(isPhoto ? "Fotoğraf en fazla 10 MB olabilir." : "Video en fazla 50 MB olabilir.");
+      event.target.value = "";
+      return;
+    }
+    setError(null);
+    setAttachment(file);
+  }
+
+  function clearAttachment() {
+    setAttachment(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   async function configureWebhook() {
@@ -281,7 +322,7 @@ export function SupportDesk() {
               <button
                 key={conversation.id}
                 className={`conversation-card ${conversation.id === selectedId ? "selected" : ""}`}
-                onClick={() => { setMessages([]); setSelectedId(conversation.id); setMobileListOpen(false); }}
+                onClick={() => { setMessages([]); clearAttachment(); setSelectedId(conversation.id); setMobileListOpen(false); }}
               >
                 <span className={`conversation-avatar type-${conversation.type}`}>
                   {conversation.type === "private" ? initials(conversation.title) : "#"}
@@ -296,7 +337,7 @@ export function SupportDesk() {
                   <span className="conversation-meta">
                     <i className={`priority-dot ${conversation.status}`} />
                     {conversation.assignedToEmail ? (conversation.assignedToEmail === actor?.email ? "Sende" : "Atanmış") : "Atanmamış"}
-                    {conversation.type !== "private" ? <em>Grup</em> : null}
+                    {conversation.type !== "private" ? <em>{conversation.topicId ? "Konu" : "Grup"}</em> : null}
                   </span>
                 </span>
                 {conversation.unreadCount ? <span className="unread-badge">{conversation.unreadCount}</span> : null}
@@ -316,7 +357,7 @@ export function SupportDesk() {
               <header className="chat-header">
                 <button className="mobile-back" onClick={() => setMobileListOpen(true)} aria-label="Konuşma listesine dön">‹</button>
                 <span className={`conversation-avatar compact type-${selected.type}`}>{selected.type === "private" ? initials(selected.title) : "#"}</span>
-                <div className="chat-heading"><strong>{selected.title}</strong><span>{selected.type === "private" ? "Özel sohbet" : "Telegram grubu"} · {status.connected ? "canlı" : "çevrimdışı"}</span></div>
+                <div className="chat-heading"><strong>{selected.title}</strong><span>{selected.type === "private" ? "Özel sohbet" : selected.topicId ? "Telegram konusu" : "Telegram grubu"} · {status.connected ? "canlı" : "çevrimdışı"}</span></div>
                 <button className="ghost-button" onClick={() => void updateConversation({ status: selected.status === "resolved" ? "open" : "resolved" })}>
                   {selected.status === "resolved" ? "Yeniden aç" : "Çözüldü"}
                 </button>
@@ -338,11 +379,16 @@ export function SupportDesk() {
 
               {error ? <div className="error-banner" role="alert">{error}<button onClick={() => setError(null)}>×</button></div> : null}
               <form className="composer" onSubmit={sendReply}>
+                <label className={`attach-button ${sending || !status.connected ? "disabled" : ""}`} title="Fotoğraf veya MP4 video ekle">
+                  <span>＋</span>
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4" disabled={sending || !status.connected} onChange={selectAttachment} />
+                </label>
                 <div className="composer-input">
-                  <textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Yanıtınızı yazın…" rows={1} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />
+                  {attachment ? <div className="selected-media"><span>{attachment.type.startsWith("image/") ? "Fotoğraf" : "Video"}</span><strong>{attachment.name}</strong><small>{(attachment.size / 1024 / 1024).toFixed(1)} MB</small><button type="button" onClick={clearAttachment} aria-label="Eki kaldır">×</button></div> : null}
+                  <textarea value={draft} maxLength={attachment ? 1024 : 4096} onChange={(event) => setDraft(event.target.value)} placeholder={attachment ? "Açıklama ekleyin…" : "Yanıtınızı yazın…"} rows={1} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />
                   <span className="composer-hint">Enter gönderir · Shift + Enter yeni satır</span>
                 </div>
-                <button className="send-button" disabled={!draft.trim() || sending || !status.connected} aria-label="Mesaj gönder">{sending ? "…" : "↑"}</button>
+                <button className="send-button" disabled={(!draft.trim() && !attachment) || sending || !status.connected} aria-label="Mesaj gönder">{sending ? "…" : "↑"}</button>
               </form>
             </>
           )}
@@ -358,7 +404,7 @@ export function SupportDesk() {
               </div>
               <section className="detail-section"><h3>Sorumlu</h3><button className="assignment-button" onClick={() => void updateConversation({ assignedToEmail: selected.assignedToEmail ? null : actor?.email })}><span className="agent-avatar tiny">{selected.assignedToEmail ? initials(actor?.displayName || "D") : "+"}</span><span>{selected.assignedToEmail ? "Bana atandı" : "Bana ata"}</span><b>⌄</b></button></section>
               <section className="detail-section"><h3>Durum</h3><div className="status-options">{(["open", "pending", "resolved"] as const).map((item) => <button key={item} className={selected.status === item ? "active" : ""} onClick={() => void updateConversation({ status: item })}>{item === "open" ? "Açık" : item === "pending" ? "Beklemede" : "Çözüldü"}</button>)}</div></section>
-              <section className="detail-section facts"><h3>Konuşma bilgileri</h3><p><span>Kaynak</span><strong>Telegram</strong></p><p><span>Tür</span><strong>{selected.type === "private" ? "Özel sohbet" : "Grup"}</strong></p><p><span>Sohbet ID</span><strong>{selected.telegramChatId}</strong></p></section>
+              <section className="detail-section facts"><h3>Konuşma bilgileri</h3><p><span>Kaynak</span><strong>Telegram</strong></p><p><span>Tür</span><strong>{selected.type === "private" ? "Özel sohbet" : selected.topicId ? "Grup konusu" : "Grup"}</strong></p><p><span>Sohbet ID</span><strong>{selected.telegramChatId}</strong></p>{selected.topicId ? <p><span>Konu ID</span><strong>{selected.topicId}</strong></p> : null}</section>
             </>
           ) : (
             <div className="details-placeholder"><span>R</span><p>Bir konuşma seçtiğinizde müşteri ve atama bilgileri burada görünür.</p></div>
@@ -373,6 +419,9 @@ function MessageContent({ message }: { message: Message }) {
   if (message.isDeleted) return <p className="deleted-message">Bu mesaj silindi.</p>;
   if (message.contentType === "photo" && message.fileId) {
     return <div className="message-content"><Image unoptimized width={720} height={480} className="message-photo" src={`/api/telegram/file?file_id=${encodeURIComponent(message.fileId)}`} alt={message.text || "Telegram fotoğrafı"} />{message.text ? <p>{message.text}</p> : null}</div>;
+  }
+  if (message.contentType === "video" && message.fileId) {
+    return <div className="message-content"><video className="message-video" controls preload="metadata" src={`/api/telegram/file?file_id=${encodeURIComponent(message.fileId)}`} />{message.text ? <p>{message.text}</p> : null}</div>;
   }
   if (message.contentType === "location") {
     return <a className="attachment-card" href={`https://www.google.com/maps?q=${encodeURIComponent(message.text)}`} target="_blank" rel="noreferrer"><span>⌖</span><div><strong>Konumu aç</strong><small>{message.text}</small></div></a>;

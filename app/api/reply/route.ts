@@ -35,6 +35,9 @@ export async function POST(request: Request) {
     const message = await telegramApi<TelegramMessage>("sendMessage", {
       ...(isBotGroup ? {} : { business_connection_id: conversation.connectionId }),
       chat_id: conversation.telegramChatId,
+      ...(conversation.topicId
+        ? { message_thread_id: Number(conversation.topicId) }
+        : {}),
       text,
     });
     if (!isBotGroup) message.business_connection_id ??= conversation.connectionId;

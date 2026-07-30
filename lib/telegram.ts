@@ -19,6 +19,9 @@ export type TelegramChat = {
 export type TelegramMessage = {
   message_id: number;
   business_connection_id?: string;
+  message_thread_id?: number;
+  is_topic_message?: boolean;
+  relaydesk_topic_title?: string;
   date: number;
   chat: TelegramChat;
   from?: TelegramUser;
@@ -35,6 +38,7 @@ export type TelegramMessage = {
   location?: { latitude: number; longitude: number };
   contact?: { first_name: string; last_name?: string; phone_number: string };
   poll?: { question: string };
+  forum_topic_created?: { name: string };
 };
 
 export type ParsedContent = {
@@ -77,6 +81,17 @@ export function chatTitle(chat: TelegramChat): string {
 
 export function parseContent(message: TelegramMessage): ParsedContent {
   const text = message.text ?? message.caption ?? "";
+
+  if (message.forum_topic_created) {
+    return {
+      text: `Konu oluşturuldu: ${message.forum_topic_created.name}`,
+      contentType: "system",
+      fileId: null,
+      fileName: null,
+      mimeType: null,
+      preview: `Konu oluşturuldu: ${message.forum_topic_created.name}`,
+    };
+  }
 
   if (message.photo?.length) {
     const photo = message.photo.at(-1)!;
@@ -183,6 +198,30 @@ export async function telegramApi<T>(
 
   if (!response.ok || !result.ok || result.result === undefined) {
     throw new Error(result.description || "Telegram API isteği başarısız oldu.");
+  }
+
+  return result.result;
+}
+
+export async function telegramMultipartApi<T>(
+  method: string,
+  form: FormData,
+): Promise<T> {
+  const { botToken } = telegramConfig();
+  if (!botToken) throw new Error("Telegram bot token henüz ayarlanmadı.");
+
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
+    method: "POST",
+    body: form,
+  });
+  const result = (await response.json()) as {
+    ok: boolean;
+    result?: T;
+    description?: string;
+  };
+
+  if (!response.ok || !result.ok || result.result === undefined) {
+    throw new Error(result.description || "Telegram medya isteği başarısız oldu.");
   }
 
   return result.result;

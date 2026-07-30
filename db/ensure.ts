@@ -25,6 +25,7 @@ const statements = [
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     connection_id TEXT NOT NULL,
     telegram_chat_id TEXT NOT NULL,
+    topic_id TEXT NOT NULL DEFAULT '',
     type TEXT NOT NULL DEFAULT 'private',
     title TEXT NOT NULL,
     username TEXT,
@@ -37,8 +38,6 @@ const statements = [
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
-  `CREATE UNIQUE INDEX IF NOT EXISTS conversations_connection_chat_unique
-    ON conversations (connection_id, telegram_chat_id)`,
   `CREATE INDEX IF NOT EXISTS conversations_last_message_idx
     ON conversations (last_message_at)`,
   `CREATE INDEX IF NOT EXISTS conversations_assignee_idx
@@ -87,6 +86,23 @@ export async function ensureSchema(): Promise<void> {
   initialized = (async () => {
     if (!env.DB) throw new Error("DB binding is unavailable");
     await env.DB.batch(statements.map((statement) => env.DB.prepare(statement)));
+
+    const columns = await env.DB.prepare("PRAGMA table_info(conversations)").all<{
+      name: string;
+    }>();
+    if (!columns.results.some((column) => column.name === "topic_id")) {
+      await env.DB.prepare(
+        "ALTER TABLE conversations ADD COLUMN topic_id TEXT NOT NULL DEFAULT ''",
+      ).run();
+    }
+
+    await env.DB.batch([
+      env.DB.prepare("DROP INDEX IF EXISTS conversations_connection_chat_unique"),
+      env.DB.prepare(
+        `CREATE UNIQUE INDEX IF NOT EXISTS conversations_connection_chat_topic_unique
+         ON conversations (connection_id, telegram_chat_id, topic_id)`,
+      ),
+    ]);
   })();
 
   try {

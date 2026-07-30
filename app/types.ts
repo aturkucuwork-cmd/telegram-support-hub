@@ -23,6 +23,7 @@ export type Conversation = {
   id: number;
   connectionId: string;
   telegramChatId: string;
+  topicId: string;
   type: "private" | "group" | "supergroup" | "channel";
   title: string;
   username: string | null;

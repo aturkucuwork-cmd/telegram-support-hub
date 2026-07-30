@@ -43,9 +43,17 @@ export async function storeTelegramMessage(options: {
     : [];
 
   const chatId = String(message.chat.id);
+  const topicId = message.message_thread_id === undefined
+    ? ""
+    : String(message.message_thread_id);
   const now = new Date().toISOString();
   const sentAt = new Date(message.date * 1000).toISOString();
-  const title = chatTitle(message.chat);
+  const baseTitle = chatTitle(message.chat);
+  const topicTitle =
+    message.relaydesk_topic_title ?? message.forum_topic_created?.name;
+  const title = topicId
+    ? `${baseTitle} · ${topicTitle || `Konu #${topicId}`}`
+    : baseTitle;
   const content = parseContent(message);
   const outgoing = options.outgoing ??
     (Boolean(message.sender_business_bot) ||
@@ -60,6 +68,7 @@ export async function storeTelegramMessage(options: {
       and(
         eq(conversations.connectionId, connectionId),
         eq(conversations.telegramChatId, chatId),
+        eq(conversations.topicId, topicId),
       ),
     )
     .limit(1);
@@ -70,6 +79,7 @@ export async function storeTelegramMessage(options: {
       .values({
         connectionId,
         telegramChatId: chatId,
+        topicId,
         type: message.chat.type,
         title,
         username: message.chat.username ?? null,
@@ -86,7 +96,7 @@ export async function storeTelegramMessage(options: {
       .update(conversations)
       .set({
         type: message.chat.type,
-        title,
+        title: topicId && !topicTitle ? conversation.title : title,
         username: message.chat.username ?? null,
         updatedAt: now,
         ...(shouldRefreshPreview

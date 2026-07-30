@@ -15,6 +15,7 @@ from typing import Any
 import truststore
 from telethon import TelegramClient, errors, types, utils
 from telethon.sessions import MemorySession
+from telethon.tl.functions.messages import GetForumTopicsRequest
 
 
 truststore.inject_into_ssl()
@@ -180,6 +181,8 @@ def sender_payload(sender: Any, fallback: Any) -> dict[str, Any]:
 
 
 def historical_text(message: Any) -> str | None:
+    if isinstance(message.action, types.MessageActionTopicCreate):
+        return f"Konu oluşturuldu: {message.action.title}"
     text = (message.raw_text or "").strip()
     label = None
     if getattr(message, "photo", None):
@@ -217,8 +220,13 @@ async def message_payload(
     chat: dict[str, Any],
     connection_id: str,
     account: Any,
+    topic_id: int | None = None,
+    topic_title: str | None = None,
 ) -> dict[str, Any] | None:
-    if message.action is not None:
+    if message.action is not None and not isinstance(
+        message.action,
+        types.MessageActionTopicCreate,
+    ):
         return None
     text = historical_text(message)
     if not text:
@@ -244,12 +252,42 @@ async def message_payload(
     }
     if source == "business":
         telegram_message["business_connection_id"] = connection_id
+    if topic_id is not None:
+        telegram_message["message_thread_id"] = topic_id
+        telegram_message["is_topic_message"] = True
+        telegram_message["relaydesk_topic_title"] = topic_title or (
+            "Genel" if topic_id == 1 else f"Konu #{topic_id}"
+        )
 
     return {
         "source": source,
         "outgoing": bool(message.out),
         "message": telegram_message,
     }
+
+
+async def forum_topics(client: TelegramClient, entity: Any) -> dict[int, str]:
+    if not isinstance(entity, types.Channel) or not getattr(entity, "forum", False):
+        return {}
+
+    result = await client(
+        GetForumTopicsRequest(
+            peer=await client.get_input_entity(entity),
+            offset_date=None,
+            offset_id=0,
+            offset_topic=0,
+            limit=100,
+            q=None,
+        )
+    )
+    topics = {
+        int(topic.id): str(topic.title)
+        for topic in getattr(result, "topics", [])
+        if getattr(topic, "id", None) is not None
+        and getattr(topic, "title", None)
+    }
+    topics.setdefault(1, "Genel")
+    return topics
 
 
 def post_batch(items: list[dict[str, Any]], webhook_secret: str) -> int:
@@ -332,22 +370,51 @@ async def sync_history() -> int:
             else:
                 group_dialogs += 1
 
-            recent_messages = [
-                message
-                async for message in client.iter_messages(
-                    dialog.entity,
-                    limit=message_limit,
-                )
-            ]
+            topic_names = await forum_topics(client, dialog.entity)
+            message_entries: list[tuple[Any, int | None, str | None]] = []
+            if topic_names:
+                seen_messages: set[tuple[int, int]] = set()
+                for current_topic_id, current_topic_title in topic_names.items():
+                    try:
+                        topic_messages = [
+                            message
+                            async for message in client.iter_messages(
+                                dialog.entity,
+                                limit=message_limit,
+                                reply_to=current_topic_id,
+                            )
+                        ]
+                    except errors.RPCError:
+                        topic_messages = []
+                    for message in topic_messages:
+                        key = (current_topic_id, int(message.id))
+                        if key in seen_messages:
+                            continue
+                        seen_messages.add(key)
+                        message_entries.append(
+                            (message, current_topic_id, current_topic_title)
+                        )
+            else:
+                message_entries = [
+                    (message, None, None)
+                    async for message in client.iter_messages(
+                        dialog.entity,
+                        limit=message_limit,
+                    )
+                ]
+
+            message_entries.sort(key=lambda entry: entry[0].date)
             batch: list[dict[str, Any]] = []
             dialog_imported = 0
-            for message in reversed(recent_messages):
+            for message, current_topic_id, current_topic_title in message_entries:
                 item = await message_payload(
                     message,
                     source=source,
                     chat=chat,
                     connection_id=connection_id,
                     account=account,
+                    topic_id=current_topic_id,
+                    topic_title=current_topic_title,
                 )
                 if item is None:
                     continue

@@ -15,7 +15,23 @@ export async function GET(request: Request) {
     .orderBy(desc(conversations.lastMessageAt))
     .limit(250);
 
-  return Response.json({ conversations: rows, actor });
+  const chatsWithTopics = new Set(
+    rows
+      .filter((conversation) => conversation.topicId)
+      .map(
+        (conversation) =>
+          `${conversation.connectionId}:${conversation.telegramChatId}`,
+      ),
+  );
+  const visibleRows = rows.filter(
+    (conversation) =>
+      conversation.topicId ||
+      !chatsWithTopics.has(
+        `${conversation.connectionId}:${conversation.telegramChatId}`,
+      ),
+  );
+
+  return Response.json({ conversations: visibleRows, actor });
 }
 
 export async function PATCH(request: Request) {
