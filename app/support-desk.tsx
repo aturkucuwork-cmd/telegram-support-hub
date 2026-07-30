@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { Conversation, Message, SystemStatus } from "./types";
 import { AuthCard, TeamPanel } from "./account-ui";
 import { MessageLogPanel } from "./message-log-panel";
+import { SetupWizard } from "./setup-wizard";
 
 type Filter = "all" | "mine" | "unassigned" | "groups" | "resolved";
 
@@ -92,13 +93,14 @@ export function SupportDesk() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [mobileListOpen, setMobileListOpen] = useState(true);
   const [setupRequired, setSetupRequired] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
   const [messageLogsOpen, setMessageLogsOpen] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
   const [replyTarget, setReplyTarget] = useState<Message | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const setupAutoOpened = useRef(false);
 
   const loadStatus = useCallback(async () => {
     const response = await fetch("/api/status", { cache: "no-store" });
@@ -169,6 +171,17 @@ export function SupportDesk() {
 
   const selected = conversations.find((item) => item.id === selectedId) ?? null;
   const actor = status?.actor ?? null;
+
+  useEffect(() => {
+    if (
+      status?.actor.role === "admin" &&
+      !setupAutoOpened.current &&
+      (!status.configured || !status.connected || !status.userGroupListener.connected)
+    ) {
+      setupAutoOpened.current = true;
+      setSetupOpen(true);
+    }
+  }, [status]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase("tr-TR");
@@ -274,24 +287,6 @@ export function SupportDesk() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  async function configureWebhook() {
-    setError(null);
-    const response = await fetch("/api/telegram/configure", { method: "POST" });
-    const data = await readResponseData(response);
-    if (!response.ok) {
-      setError(data.error || "Webhook etkinleştirilemedi.");
-      return;
-    }
-    await loadStatus();
-  }
-
-  async function copyWebhook() {
-    if (!status?.webhookUrl) return;
-    await navigator.clipboard.writeText(status.webhookUrl);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
-  }
-
   async function authenticated() {
     setLoading(true);
     try {
@@ -344,6 +339,7 @@ export function SupportDesk() {
             {status.userGroupListener.connected ? "Telegram + grup akışı bağlı" : status.connected ? "Telegram bağlı" : status.configured ? "Bağlantı bekleniyor" : "Kurulum gerekli"}
           </span>
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setMessageLogsOpen(true)}>Mesaj logları</button> : null}
+          {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setSetupOpen(true)}>Kurulum</button> : null}
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setTeamOpen(true)}>Ekip</button> : null}
           <button className="agent-avatar account-avatar" title={`${actor?.email} · Çıkış yap`} aria-label="Oturumu kapat" onClick={() => void logout()}>{initials(actor?.displayName || "D")}</button>
         </div>
@@ -437,7 +433,7 @@ export function SupportDesk() {
 
         <section className={`chat-pane ${mobileListOpen ? "mobile-hidden" : ""}`}>
           {!selected ? (
-            <SetupPanel status={status} copied={copied} onCopy={copyWebhook} onConfigure={configureWebhook} />
+            <SetupPanel status={status} onOpen={() => setSetupOpen(true)} />
           ) : (
             <>
               <header className="chat-header">
@@ -513,6 +509,7 @@ export function SupportDesk() {
       </main>
       {teamOpen && actor?.role === "admin" ? <TeamPanel actor={actor} onClose={() => setTeamOpen(false)} /> : null}
       {messageLogsOpen && actor?.role === "admin" ? <MessageLogPanel onClose={() => setMessageLogsOpen(false)} /> : null}
+      {setupOpen && actor?.role === "admin" ? <SetupWizard status={status} onRefresh={loadStatus} onClose={() => setSetupOpen(false)} /> : null}
     </>
   );
 }
@@ -534,22 +531,16 @@ function MessageContent({ message }: { message: Message }) {
   return <p>{message.text || attachmentLabel(message)}</p>;
 }
 
-function SetupPanel({ status, copied, onCopy, onConfigure }: { status: SystemStatus; copied: boolean; onCopy: () => void; onConfigure: () => void }) {
-  const isLocalPolling = status.deliveryMode === "polling";
+function SetupPanel({ status, onOpen }: { status: SystemStatus; onOpen: () => void }) {
+  const complete = status.configured && status.connected && status.userGroupListener.connected;
   return (
     <div className="setup-wrap">
       <div className="setup-orbit"><span>R</span><i /><b /></div>
       <p className="eyebrow">BAĞLANTI MERKEZİ</p>
-      <h1>{status.connected ? "Telegram bağlı. İlk mesajı bekliyoruz." : isLocalPolling ? "Yerel dinleyici hazır. İlk müşteri mesajını bekliyoruz." : "Telegram hesabınızı RelayDesk’e bağlayın."}</h1>
-      <p className="setup-lead">Tek destek hesabınız çalışmaya devam eder; ekip üyeleri Telegram’a giriş yapmadan bu panelden yanıt verir.</p>
-      <div className="setup-steps">
-        <article className={status.configured ? "done" : "current"}><span>1</span><div><strong>Bot anahtarını ekleyin</strong><p>BotFather token’ı ve webhook gizli anahtarı sunucuya tanımlanır.</p></div><b>{status.configured ? "✓" : "01"}</b></article>
-        <article className={isLocalPolling && status.configured ? "done" : status.connected ? "done" : status.configured ? "current" : ""}><span>2</span><div><strong>{isLocalPolling ? "Yerel mesaj dinleyicisini açık tutun" : "Webhook’u etkinleştirin"}</strong><p>{isLocalPolling ? "RelayDesk Telegram güncellemelerini long polling ile alır; Telegram Bağlantısı terminali açık kalmalıdır." : "Telegram yeni mesajları güvenli biçimde bu adrese gönderir."}</p>{!isLocalPolling ? <button className="webhook-copy" onClick={onCopy}>{copied ? "Kopyalandı" : status.webhookUrl}</button> : null}</div><b>{isLocalPolling && status.configured ? "✓" : status.connected ? "✓" : "02"}</b></article>
-        <article className={status.connected ? "done" : isLocalPolling && status.configured ? "current" : ""}><span>3</span><div><strong>{isLocalPolling ? "İlk test mesajını gönderin" : "Hesaptan botu bağlayın"}</strong><p>{isLocalPolling ? "Başka bir Telegram hesabından destek hesabına yeni bir mesaj gönderin; sohbet otomatik olarak burada görünür." : "Telegram → Ayarlar → Telegram Business → Sohbet Botları bölümünden botu seçip yanıt yetkisini verin."}</p></div><b>{status.connected ? "✓" : "03"}</b></article>
-      </div>
-      {status.configured && !status.connected && !isLocalPolling ? <button className="primary-button setup-action" onClick={onConfigure}>Webhook’u etkinleştir</button> : null}
-      {!status.configured ? <div className="setup-note">Token hiçbir zaman tarayıcıya gönderilmez; yalnızca güvenli sunucu değişkeninde tutulur.</div> : null}
-      <div className="setup-note">Grup desteği için aynı botu gruplara ekleyin; tüm mesajları görmek için BotFather’da Group Privacy’yi kapatın veya botu yönetici yapın. Grup yanıtları bot adına gönderilir.</div>
+      <h1>{complete ? "Telegram bağlantılarınız çalışıyor." : "Adım adım kuruluma devam edin."}</h1>
+      <p className="setup-lead">Bot, Business hesabı, takip edilen grup ve kanallar tek kurulum ekranından yönetilir.</p>
+      <button className="primary-button setup-action" onClick={onOpen}>{complete ? "Kurulum durumunu aç" : "Kurulum sihirbazını aç"}</button>
+      <div className="setup-note">Hassas Telegram bilgileri ekip kullanıcılarıyla paylaşılmaz.</div>
     </div>
   );
 }

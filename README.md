@@ -55,19 +55,30 @@ Araç bilgileri yalnızca terminal belleğinde tutar, oturum dosyası oluşturma
 
 ## Public adres olmadan yerel Telegram bağlantısı
 
-Business bot bağlantısı tamamlandıktan sonra yerel RelayDesk'i başlatmak için:
+Yerel RelayDesk'i başlatmak için:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\start-local-telegram.ps1
 ```
 
-İlk çalıştırmada BotFather token'ı gizli olarak sorulur. Token yalnızca Git tarafından yok sayılan `.env.local` dosyasına kaydedilir. Araç RelayDesk sunucusunu yeni ayarlarla başlatır ve Telegram güncellemelerini `getUpdates` long polling yöntemiyle yerel webhook'a aktarır.
+Ardından `http://localhost:3000` adresini açın. İlk yönetici hesabını oluşturduktan sonra kurulum sihirbazı otomatik açılır ve aşağıdaki adımları tek ekranda tamamlatır:
 
-`RelayDesk Telegram Bağlantısı` terminali açık kaldığı sürece yeni mesajlar alınır. Daha önce botta bir public webhook tanımlıysa araç, onu kaldırmadan önce onay ister ve bekleyen güncellemeleri silmez.
+1. BotFather'da bot oluşturma ve Business Mode'u açma
+2. Bot token'ını doğrulama ve yerel long polling ayarı
+3. `my.telegram.org` API bilgileriyle normal Telegram hesabını bağlama
+4. Telegram giriş kodu ve varsa iki aşamalı doğrulama
+5. Business bot okuma/yanıtlama yetkilerini bağlama
+6. Takip edilen grup, forum ve kanalların canlı dinleyicisini başlatma
+
+Token, `api_hash`, giriş kodu ve 2FA parolası kurulum sırasında yalnızca yerel bilgisayarda işlenir. Telegram kullanıcı oturumu Windows DPAPI ile şifrelenir; D1 mesaj veritabanına veya ekip tarayıcılarına yazılmaz.
+
+`RelayDesk Telegram Bağlantısı` terminali açık kaldığı sürece bot mesajları alınır. Yerel kurulum köprüsü yalnızca `127.0.0.1` adresinde çalışır, rastgele kurulum anahtarı ister ve ayar uçları yalnızca yönetici hesabına açılır.
 
 ### Takip edilen grup ve kanalları canlı bağlama
 
-Normal Telegram hesabınızda takip ettiğiniz grup, süpergrup, forum konusu ve kanalların bot eklemeden panele akması için bir kez kullanıcı dinleyicisini bağlayın:
+Normal Telegram hesabınızda takip ettiğiniz grup, süpergrup, forum konusu ve kanalların bot eklemeden panele akması için panelde **Kurulum → Grup ve kanal akışı** adımını tamamlayın.
+
+Terminal tabanlı yedek kurulum gerekirse aşağıdaki araç hâlâ kullanılabilir:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\configure-telegram-user-listener.ps1
@@ -113,5 +124,6 @@ npm run build
 | `TELEGRAM_BOT_TOKEN` | BotFather tarafından verilen gizli bot token'ı |
 | `TELEGRAM_WEBHOOK_SECRET` | Telegram webhook isteklerini doğrulayan gizli değer |
 | `SUPPORT_ALLOWED_EMAILS` | Panele girebilecek virgülle ayrılmış e-posta listesi |
+| `LOCAL_SETUP_TOKEN` | Yalnızca localhost kurulum köprüsünü yetkilendiren rastgele yerel anahtar |
 
 Webhook yolu: `/api/telegram/webhook`

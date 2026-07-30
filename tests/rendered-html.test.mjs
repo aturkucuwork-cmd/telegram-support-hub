@@ -3,9 +3,12 @@ import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("builds the RelayDesk support application", async () => {
-  const [page, desk, messageLogPanel, messageLogApi, reply, mediaReply, webhook, configure, status, worker] = await Promise.all([
+  const [page, desk, setupWizard, localSetupApi, localSetupBridge, messageLogPanel, messageLogApi, reply, mediaReply, webhook, configure, status, worker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/support-desk.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/setup-wizard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/local-setup/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/local_setup_bridge.py", import.meta.url), "utf8"),
     readFile(new URL("../app/message-log-panel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/message-logs/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/reply/route.ts", import.meta.url), "utf8"),
@@ -18,7 +21,15 @@ test("builds the RelayDesk support application", async () => {
 
   assert.match(page, /RelayDesk/);
   assert.match(desk, /EKİP GELEN KUTUSU/);
-  assert.match(desk, /Webhook’u etkinleştir/);
+  assert.match(desk, /Kurulum sihirbazını aç/);
+  assert.match(setupWizard, /BotFather botunu hazırlayın/);
+  assert.match(setupWizard, /Normal Telegram hesabını bağlayın/);
+  assert.match(setupWizard, /Business botu hesaba bağla/);
+  assert.match(setupWizard, /Grup ve kanal dinleyicisini başlat/);
+  assert.match(localSetupApi, /requireAdmin/);
+  assert.match(localSetupApi, /LOCAL_SETUP_TOKEN/);
+  assert.match(localSetupBridge, /UpdateConnectedBotRequest/);
+  assert.match(localSetupBridge, /save_session/);
   assert.match(desk, /↩ Yanıtla/);
   assert.match(desk, /replyToMessageId/);
   assert.match(desk, /Mesaj logları/);
