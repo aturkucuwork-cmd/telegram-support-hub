@@ -5,6 +5,7 @@
 /.venv/
 __pycache__/
 *.pyc
+/.sync-status.json
 /.pnp
 .pnp.*
 .yarn/*

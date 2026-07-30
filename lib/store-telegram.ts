@@ -20,8 +20,9 @@ export async function storeTelegramMessage(options: {
   edited?: boolean;
   connectionId?: string;
   outgoing?: boolean;
+  historical?: boolean;
 }) {
-  const { message, updateId, edited = false } = options;
+  const { message, updateId, edited = false, historical = false } = options;
   const businessConnectionId = message.business_connection_id;
   const connectionId = options.connectionId ?? businessConnectionId;
   if (!connectionId) throw new Error("Telegram bağlantı kimliği eksik.");
@@ -75,20 +76,22 @@ export async function storeTelegramMessage(options: {
         avatarSeed: title,
         lastMessage: content.preview,
         lastMessageAt: sentAt,
-        unreadCount: outgoing || edited ? 0 : 1,
+        unreadCount: outgoing || edited || historical ? 0 : 1,
       })
       .returning();
   } else {
-    const shouldIncrement = !outgoing && !edited;
+    const shouldIncrement = !historical && !outgoing && !edited;
+    const shouldRefreshPreview = !historical || sentAt >= conversation.lastMessageAt;
     await db
       .update(conversations)
       .set({
         type: message.chat.type,
         title,
         username: message.chat.username ?? null,
-        lastMessage: content.preview,
-        lastMessageAt: sentAt,
         updatedAt: now,
+        ...(shouldRefreshPreview
+          ? { lastMessage: content.preview, lastMessageAt: sentAt }
+          : {}),
         unreadCount: shouldIncrement
           ? sql`${conversations.unreadCount} + 1`
           : conversation.unreadCount,

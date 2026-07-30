@@ -65,6 +65,18 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start-local-telegram.ps1
 
 `RelayDesk Telegram Bağlantısı` terminali açık kaldığı sürece yeni mesajlar alınır. Daha önce botta bir public webhook tanımlıysa araç, onu kaldırmadan önce onay ister ve bekleyen güncellemeleri silmez.
 
+### Eski sohbetleri ve grupları içe aktarma
+
+Bot API geçmiş mesajları geriye dönük vermediği için ilk kurulumdan önceki özel sohbetler ve gruplar tek kullanımlık kullanıcı API oturumuyla içe aktarılır:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\sync-telegram-history.ps1
+```
+
+Varsayılan olarak en son 100 uygun sohbetten, sohbet başına son 100 mesaj alınır; bu sayılar terminalde değiştirilebilir. Araç yalnızca özel sohbetleri, normal grupları ve süper grupları aktarır; yayın kanallarını ve bot sohbetlerini atlar. Giriş bilgileri bellekte tutulur, kalıcı kullanıcı oturumu oluşturulmaz ve işlem sonunda oturum kapatılır.
+
+Gruplardaki yeni mesajların senkron kalması ve panelden yanıt verilebilmesi için botun her ilgili gruba eklenmesi gerekir. Tüm normal grup mesajlarını almak için BotFather'da **Group Privacy** kapatılmalı veya bot grupta yönetici olmalıdır.
+
 ## Kontroller
 
 ```bash
