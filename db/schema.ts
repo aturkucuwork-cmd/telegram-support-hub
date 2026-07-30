@@ -80,6 +80,7 @@ export const messages = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     conversationId: integer("conversation_id").notNull(),
     telegramMessageId: text("telegram_message_id").notNull(),
+    replyToTelegramMessageId: text("reply_to_telegram_message_id"),
     updateId: text("update_id"),
     direction: text("direction").notNull(),
     senderId: text("sender_id"),

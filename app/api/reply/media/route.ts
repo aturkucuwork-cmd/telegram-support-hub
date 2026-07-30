@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import { ensureSchema } from "@/db/ensure";
 import { auditLogs, conversations } from "@/db/schema";
 import { requireActor } from "@/lib/auth";
+import { resolveReplyParameters } from "@/lib/reply";
 import {
   BOT_GROUP_CONNECTION_ID,
   storeTelegramMessage,
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
   const conversationId = Number(formData.get("conversationId"));
   const captionValue = formData.get("caption");
   const caption = typeof captionValue === "string" ? captionValue.trim() : "";
+  const replyToMessageId = formData.get("replyToMessageId");
   const file = formData.get("file");
 
   if (!Number.isInteger(conversationId)) {
@@ -62,6 +64,11 @@ export async function POST(request: Request) {
   if (!conversation) {
     return Response.json({ error: "Konuşma bulunamadı." }, { status: 404 });
   }
+  const replyParameters = await resolveReplyParameters(
+    conversation.id,
+    replyToMessageId,
+  );
+  if (replyParameters instanceof Response) return replyParameters;
 
   const isBotGroup = conversation.connectionId === BOT_GROUP_CONNECTION_ID;
   const telegramForm = new FormData();
@@ -73,6 +80,9 @@ export async function POST(request: Request) {
     telegramForm.set("message_thread_id", conversation.topicId);
   }
   if (caption) telegramForm.set("caption", caption);
+  if (replyParameters) {
+    telegramForm.set("reply_parameters", JSON.stringify(replyParameters));
+  }
   const mediaField = isPhoto ? "photo" : "video";
   telegramForm.set(mediaField, file, file.name);
   if (isVideo) telegramForm.set("supports_streaming", "true");
@@ -99,6 +109,7 @@ export async function POST(request: Request) {
         telegramMessageId: message.message_id,
         mediaType: isPhoto ? "photo" : "video",
         size: file.size,
+        replyToMessageId: replyParameters?.message_id,
       }),
     });
     return Response.json({ ok: true, message });

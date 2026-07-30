@@ -123,6 +123,10 @@ export async function storeTelegramMessage(options: {
 
   const values = {
     updateId: updateId === undefined ? null : String(updateId),
+    replyToTelegramMessageId:
+      message.reply_to_message?.message_id === undefined
+        ? null
+        : String(message.reply_to_message.message_id),
     direction: outgoing ? "outbound" : "inbound",
     senderId: message.from?.id === undefined ? null : String(message.from.id),
     senderName: outgoing ? "Destek" : personName(message.from),

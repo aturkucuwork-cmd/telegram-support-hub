@@ -111,6 +111,7 @@ export function localMediaUpload(): Plugin {
           const chatId = formString(form, "chatId");
           const connectionId = formString(form, "connectionId");
           const topicId = formString(form, "topicId");
+          const replyToMessageId = formString(form, "replyToMessageId");
           const isGroup = formString(form, "isGroup") === "true";
           const validateOnly = formString(form, "validateOnly") === "true";
 
@@ -140,6 +141,10 @@ export function localMediaUpload(): Plugin {
             });
             return;
           }
+          if (replyToMessageId && !/^\d+$/.test(replyToMessageId)) {
+            sendJson(response, 400, { error: "Yanıtlanacak mesaj geçersiz." });
+            return;
+          }
           if (validateOnly) {
             sendJson(response, 200, { ok: true, validated: true, size: file.size });
             return;
@@ -154,6 +159,12 @@ export function localMediaUpload(): Plugin {
           if (!isGroup) telegramForm.set("business_connection_id", connectionId);
           if (topicId) telegramForm.set("message_thread_id", topicId);
           if (caption) telegramForm.set("caption", caption);
+          if (replyToMessageId) {
+            telegramForm.set(
+              "reply_parameters",
+              JSON.stringify({ message_id: Number(replyToMessageId) }),
+            );
+          }
           const mediaField = isPhoto ? "photo" : "video";
           telegramForm.set(mediaField, file, file.name);
           if (isVideo) telegramForm.set("supports_streaming", "true");

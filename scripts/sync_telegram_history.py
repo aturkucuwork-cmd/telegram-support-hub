@@ -252,6 +252,9 @@ async def message_payload(
     }
     if source == "business":
         telegram_message["business_connection_id"] = connection_id
+    reply_to_message_id = getattr(message, "reply_to_msg_id", None)
+    if isinstance(reply_to_message_id, int):
+        telegram_message["reply_to_message"] = {"message_id": reply_to_message_id}
     if topic_id is not None:
         telegram_message["message_thread_id"] = topic_id
         telegram_message["is_topic_message"] = True

@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import { ensureSchema } from "@/db/ensure";
 import { auditLogs, conversations } from "@/db/schema";
 import { requireActor } from "@/lib/auth";
+import { resolveReplyParameters } from "@/lib/reply";
 import { BOT_GROUP_CONNECTION_ID, storeTelegramMessage } from "@/lib/store-telegram";
 import { telegramApi, type TelegramMessage } from "@/lib/telegram";
 
@@ -13,6 +14,7 @@ export async function POST(request: Request) {
   const payload = (await request.json()) as {
     conversationId?: number;
     text?: string;
+    replyToMessageId?: unknown;
   };
   const text = payload.text?.trim() ?? "";
   if (!Number.isInteger(payload.conversationId) || !text || text.length > 4096) {
@@ -29,6 +31,11 @@ export async function POST(request: Request) {
   if (!conversation) {
     return Response.json({ error: "Konuşma bulunamadı." }, { status: 404 });
   }
+  const replyParameters = await resolveReplyParameters(
+    conversation.id,
+    payload.replyToMessageId,
+  );
+  if (replyParameters instanceof Response) return replyParameters;
 
   try {
     const isBotGroup = conversation.connectionId === BOT_GROUP_CONNECTION_ID;
@@ -38,6 +45,7 @@ export async function POST(request: Request) {
       ...(conversation.topicId
         ? { message_thread_id: Number(conversation.topicId) }
         : {}),
+      ...(replyParameters ? { reply_parameters: replyParameters } : {}),
       text,
     });
     if (!isBotGroup) message.business_connection_id ??= conversation.connectionId;
@@ -50,7 +58,10 @@ export async function POST(request: Request) {
       conversationId,
       actorEmail: actor.email,
       action: "message_sent",
-      detail: JSON.stringify({ telegramMessageId: message.message_id }),
+      detail: JSON.stringify({
+        telegramMessageId: message.message_id,
+        replyToMessageId: replyParameters?.message_id,
+      }),
     });
     return Response.json({ ok: true, message });
   } catch (error) {

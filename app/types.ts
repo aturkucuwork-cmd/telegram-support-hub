@@ -39,6 +39,7 @@ export type Conversation = {
 export type Message = {
   id: number;
   telegramMessageId: string;
+  replyToTelegramMessageId: string | null;
   direction: "inbound" | "outbound";
   senderName: string | null;
   text: string;

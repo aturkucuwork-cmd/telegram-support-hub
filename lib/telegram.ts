@@ -39,6 +39,7 @@ export type TelegramMessage = {
   contact?: { first_name: string; last_name?: string; phone_number: string };
   poll?: { question: string };
   forum_topic_created?: { name: string };
+  reply_to_message?: { message_id: number };
 };
 
 export type ParsedContent = {

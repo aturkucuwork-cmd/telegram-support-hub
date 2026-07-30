@@ -55,6 +55,17 @@ function attachmentLabel(message: Message) {
   return labels[message.contentType] || "Ek";
 }
 
+function messageSummary(message: Message): string {
+  const summary = message.isDeleted
+    ? "Silinmiş mesaj"
+    : message.text.trim() || attachmentLabel(message);
+  return summary.length > 140 ? `${summary.slice(0, 137)}…` : summary;
+}
+
+function messageSenderLabel(message: Message): string {
+  return message.direction === "outbound" ? "Destek" : message.senderName || "Müşteri";
+}
+
 async function readResponseData(response: Response): Promise<{ error?: string }> {
   const text = await response.text();
   if (!text) return {};
@@ -84,6 +95,7 @@ export function SupportDesk() {
   const [mobileListOpen, setMobileListOpen] = useState(true);
   const [setupRequired, setSetupRequired] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
+  const [replyTarget, setReplyTarget] = useState<Message | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadStatus = useCallback(async () => {
@@ -199,6 +211,7 @@ export function SupportDesk() {
         formData.set("connectionId", selected.connectionId);
         formData.set("topicId", selected.topicId || "");
         formData.set("isGroup", String(selected.type !== "private"));
+        if (replyTarget) formData.set("replyToMessageId", replyTarget.telegramMessageId);
         formData.set("file", attachment, attachment.name);
         response = await fetch("/api/reply/media", {
           method: "POST",
@@ -208,13 +221,18 @@ export function SupportDesk() {
         response = await fetch("/api/reply", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ conversationId: selected.id, text }),
+          body: JSON.stringify({
+            conversationId: selected.id,
+            text,
+            replyToMessageId: replyTarget ? Number(replyTarget.telegramMessageId) : undefined,
+          }),
         });
       }
       const data = await readResponseData(response);
       if (!response.ok) throw new Error(data.error || "Mesaj gönderilemedi.");
       setDraft("");
       setAttachment(null);
+      setReplyTarget(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await Promise.all([loadMessages(selected.id), loadConversations()]);
     } catch (cause) {
@@ -369,7 +387,7 @@ export function SupportDesk() {
               <button
                 key={conversation.id}
                 className={`conversation-card ${conversation.id === selectedId ? "selected" : ""}`}
-                onClick={() => { setMessages([]); clearAttachment(); setSelectedId(conversation.id); setMobileListOpen(false); }}
+                onClick={() => { setMessages([]); clearAttachment(); setReplyTarget(null); setSelectedId(conversation.id); setMobileListOpen(false); }}
               >
                 <span className={`conversation-avatar type-${conversation.type}`}>
                   {conversation.type === "private" ? initials(conversation.title) : "#"}
@@ -412,15 +430,27 @@ export function SupportDesk() {
 
               <div className="message-stream" aria-live="polite">
                 <div className="day-divider"><span>Bugün</span></div>
-                {messages.map((message) => (
-                  <article key={message.id} className={`message-row ${message.direction}`}>
-                    <div className="message-bubble">
-                      {message.direction === "inbound" && selected.type !== "private" ? <strong className="sender-name">{message.senderName}</strong> : null}
-                      <MessageContent message={message} />
-                      <span className="message-time">{message.isEdited ? "düzenlendi · " : ""}{formatTime(message.sentAt)}{message.direction === "outbound" ? "  ✓✓" : ""}</span>
-                    </div>
-                  </article>
-                ))}
+                {messages.map((message) => {
+                  const repliedMessage = message.replyToTelegramMessageId
+                    ? messages.find((item) => item.telegramMessageId === message.replyToTelegramMessageId)
+                    : null;
+                  return (
+                    <article key={message.id} className={`message-row ${message.direction}`}>
+                      <div className="message-bubble">
+                        <button className="message-reply-button" onClick={() => setReplyTarget(message)} aria-label="Bu mesajı alıntılayarak yanıtla">↩ Yanıtla</button>
+                        {message.direction === "inbound" && selected.type !== "private" ? <strong className="sender-name">{message.senderName}</strong> : null}
+                        {message.replyToTelegramMessageId ? (
+                          <button className="message-reply-reference" disabled={!repliedMessage} onClick={() => repliedMessage && setReplyTarget(repliedMessage)}>
+                            <strong>{repliedMessage ? messageSenderLabel(repliedMessage) : "Yanıtlanan mesaj"}</strong>
+                            <span>{repliedMessage ? messageSummary(repliedMessage) : `Mesaj #${message.replyToTelegramMessageId}`}</span>
+                          </button>
+                        ) : null}
+                        <MessageContent message={message} />
+                        <span className="message-time">{message.isEdited ? "düzenlendi · " : ""}{formatTime(message.sentAt)}{message.direction === "outbound" ? "  ✓✓" : ""}</span>
+                      </div>
+                    </article>
+                  );
+                })}
                 {!messages.length ? <div className="messages-empty">Bu konuşmanın mesajları burada görünecek.</div> : null}
               </div>
 
@@ -431,6 +461,7 @@ export function SupportDesk() {
                   <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4" disabled={sending || !status.connected} onChange={selectAttachment} />
                 </label>
                 <div className="composer-input">
+                  {replyTarget ? <div className="reply-composer-preview"><div><strong>{messageSenderLabel(replyTarget)}</strong><span>{messageSummary(replyTarget)}</span></div><button type="button" onClick={() => setReplyTarget(null)} aria-label="Alıntılı yanıtı kaldır">×</button></div> : null}
                   {attachment ? <div className="selected-media"><span>{attachment.type.startsWith("image/") ? "Fotoğraf" : "Video"}</span><strong>{attachment.name}</strong><small>{(attachment.size / 1024 / 1024).toFixed(1)} MB</small><button type="button" onClick={clearAttachment} aria-label="Eki kaldır">×</button></div> : null}
                   <textarea value={draft} maxLength={attachment ? 1024 : 4096} onChange={(event) => setDraft(event.target.value)} placeholder={attachment ? "Açıklama ekleyin…" : "Yanıtınızı yazın…"} rows={1} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />
                   <span className="composer-hint">Enter gönderir · Shift + Enter yeni satır</span>

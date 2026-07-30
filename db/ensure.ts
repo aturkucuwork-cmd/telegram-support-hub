@@ -59,6 +59,7 @@ const statements = [
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     conversation_id INTEGER NOT NULL,
     telegram_message_id TEXT NOT NULL,
+    reply_to_telegram_message_id TEXT,
     update_id TEXT,
     direction TEXT NOT NULL,
     sender_id TEXT,
@@ -121,6 +122,15 @@ export async function ensureSchema(): Promise<void> {
     if (!agentColumns.results.some((column) => column.name === "is_active")) {
       await env.DB.prepare(
         "ALTER TABLE agents ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1",
+      ).run();
+    }
+
+    const messageColumns = await env.DB.prepare("PRAGMA table_info(messages)").all<{
+      name: string;
+    }>();
+    if (!messageColumns.results.some((column) => column.name === "reply_to_telegram_message_id")) {
+      await env.DB.prepare(
+        "ALTER TABLE messages ADD COLUMN reply_to_telegram_message_id TEXT",
       ).run();
     }
 
