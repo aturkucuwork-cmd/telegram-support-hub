@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import type { Conversation, Message, SystemStatus } from "./types";
+import { AuthCard, TeamPanel } from "./account-ui";
 
 type Filter = "all" | "mine" | "unassigned" | "groups" | "resolved";
 
@@ -81,12 +82,19 @@ export function SupportDesk() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [mobileListOpen, setMobileListOpen] = useState(true);
+  const [setupRequired, setSetupRequired] = useState(false);
+  const [teamOpen, setTeamOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadStatus = useCallback(async () => {
     const response = await fetch("/api/status", { cache: "no-store" });
     if (response.status === 401) {
       setStatus(null);
+      const setupResponse = await fetch("/api/auth/setup", { cache: "no-store" });
+      if (setupResponse.ok) {
+        const setup = (await setupResponse.json()) as { needsSetup?: boolean };
+        setSetupRequired(Boolean(setup.needsSetup));
+      }
       return false;
     }
     if (!response.ok) throw new Error("Bağlantı durumu alınamadı.");
@@ -259,6 +267,29 @@ export function SupportDesk() {
     window.setTimeout(() => setCopied(false), 1600);
   }
 
+  async function authenticated() {
+    setLoading(true);
+    try {
+      await Promise.all([loadStatus(), loadConversations()]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setStatus(null);
+    setConversations([]);
+    setMessages([]);
+    setSelectedId(null);
+    setTeamOpen(false);
+    const setupResponse = await fetch("/api/auth/setup", { cache: "no-store" });
+    if (setupResponse.ok) {
+      const setup = (await setupResponse.json()) as { needsSetup?: boolean };
+      setSetupRequired(Boolean(setup.needsSetup));
+    }
+  }
+
   if (loading) {
     return (
       <main className="app-loading" aria-live="polite">
@@ -269,21 +300,12 @@ export function SupportDesk() {
   }
 
   if (!status) {
-    return (
-      <main className="signin-shell">
-        <section className="signin-card">
-          <div className="brand-lockup"><span className="brand-mark">R</span><span>RelayDesk</span></div>
-          <p className="eyebrow">GÜVENLİ DESTEK MERKEZİ</p>
-          <h1>Telegram ekibiniz için tek, düzenli gelen kutusu.</h1>
-          <p>Konuşmaları görmek ve yanıtlamak için yetkili hesabınızla giriş yapın.</p>
-          <a className="primary-button" href="/signin-with-chatgpt?return_to=%2F">Güvenli giriş yap</a>
-        </section>
-      </main>
-    );
+    return <AuthCard setupRequired={setupRequired} onAuthenticated={authenticated} />;
   }
 
   return (
-    <main className="desk-shell">
+    <>
+      <main className="desk-shell">
       <header className="topbar">
         <div className="brand-lockup">
           <span className="brand-mark">R</span>
@@ -295,7 +317,8 @@ export function SupportDesk() {
             <span className="status-dot" />
             {status.connected ? "Telegram bağlı" : status.configured ? "Bağlantı bekleniyor" : "Kurulum gerekli"}
           </span>
-          <div className="agent-avatar" title={actor?.email}>{initials(actor?.displayName || "D")}</div>
+          {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setTeamOpen(true)}>Ekip</button> : null}
+          <button className="agent-avatar account-avatar" title={`${actor?.email} · Çıkış yap`} aria-label="Oturumu kapat" onClick={() => void logout()}>{initials(actor?.displayName || "D")}</button>
         </div>
       </header>
 
@@ -318,10 +341,17 @@ export function SupportDesk() {
             </button>
           ))}
           <div className="nav-spacer" />
+          {actor?.role === "admin" ? (
+            <button className="nav-item" onClick={() => setTeamOpen(true)}>
+              <span className="nav-mark">+</span>
+              <span>Ekip yönetimi</span>
+            </button>
+          ) : null}
           <div className="agent-card">
             <span className="agent-avatar small">{initials(actor?.displayName || "D")}</span>
-            <div><strong>{actor?.displayName}</strong><span>Destek temsilcisi</span></div>
+            <div><strong>{actor?.displayName}</strong><span>{actor?.role === "admin" ? "Yönetici" : "Destek temsilcisi"}</span></div>
           </div>
+          <button className="logout-button" onClick={() => void logout()}>Çıkış yap</button>
         </aside>
 
         <section className={`conversation-pane ${mobileListOpen ? "mobile-open" : ""}`}>
@@ -428,7 +458,9 @@ export function SupportDesk() {
           )}
         </aside>
       </div>
-    </main>
+      </main>
+      {teamOpen && actor?.role === "admin" ? <TeamPanel actor={actor} onClose={() => setTeamOpen(false)} /> : null}
+    </>
   );
 }
 

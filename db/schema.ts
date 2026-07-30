@@ -12,9 +12,26 @@ export const agents = sqliteTable("agents", {
   email: text("email").notNull().unique(),
   displayName: text("display_name").notNull(),
   role: text("role").notNull().default("agent"),
+  passwordHash: text("password_hash"),
+  passwordSalt: text("password_salt"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   lastSeenAt: text("last_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const agentSessions = sqliteTable(
+  "agent_sessions",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    agentId: integer("agent_id").notNull(),
+    expiresAt: text("expires_at").notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("agent_sessions_agent_idx").on(table.agentId),
+    index("agent_sessions_expires_idx").on(table.expiresAt),
+  ],
+);
 
 export const telegramConnections = sqliteTable("telegram_connections", {
   id: text("id").primaryKey(),

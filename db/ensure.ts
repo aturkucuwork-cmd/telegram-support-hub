@@ -8,9 +8,22 @@ const statements = [
     email TEXT NOT NULL UNIQUE,
     display_name TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'agent',
+    password_hash TEXT,
+    password_salt TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
+  `CREATE TABLE IF NOT EXISTS agent_sessions (
+    token_hash TEXT PRIMARY KEY,
+    agent_id INTEGER NOT NULL,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS agent_sessions_agent_idx
+    ON agent_sessions (agent_id)`,
+  `CREATE INDEX IF NOT EXISTS agent_sessions_expires_idx
+    ON agent_sessions (expires_at)`,
   `CREATE TABLE IF NOT EXISTS telegram_connections (
     id TEXT PRIMARY KEY,
     telegram_user_id TEXT,
@@ -93,6 +106,21 @@ export async function ensureSchema(): Promise<void> {
     if (!columns.results.some((column) => column.name === "topic_id")) {
       await env.DB.prepare(
         "ALTER TABLE conversations ADD COLUMN topic_id TEXT NOT NULL DEFAULT ''",
+      ).run();
+    }
+
+    const agentColumns = await env.DB.prepare("PRAGMA table_info(agents)").all<{
+      name: string;
+    }>();
+    if (!agentColumns.results.some((column) => column.name === "password_hash")) {
+      await env.DB.prepare("ALTER TABLE agents ADD COLUMN password_hash TEXT").run();
+    }
+    if (!agentColumns.results.some((column) => column.name === "password_salt")) {
+      await env.DB.prepare("ALTER TABLE agents ADD COLUMN password_salt TEXT").run();
+    }
+    if (!agentColumns.results.some((column) => column.name === "is_active")) {
+      await env.DB.prepare(
+        "ALTER TABLE agents ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1",
       ).run();
     }
 

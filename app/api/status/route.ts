@@ -18,7 +18,10 @@ export async function GET(request: Request) {
   const config = telegramConfig();
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
-  const isLocal = requestUrl.hostname === "localhost" || requestUrl.hostname === "127.0.0.1";
+  const isLocal =
+    requestUrl.port === "3000" ||
+    requestUrl.hostname === "localhost" ||
+    requestUrl.hostname === "127.0.0.1";
 
   return Response.json({
     configured: Boolean(config.botToken && config.webhookSecret),

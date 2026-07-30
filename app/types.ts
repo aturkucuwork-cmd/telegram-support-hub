@@ -1,6 +1,8 @@
 export type Actor = {
+  id: number;
   email: string;
   displayName: string;
+  role: "admin" | "agent";
 };
 
 export type Connection = {

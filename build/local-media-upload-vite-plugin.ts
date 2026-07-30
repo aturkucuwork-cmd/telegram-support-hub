@@ -33,11 +33,10 @@ async function readRequestBody(request: IncomingMessage): Promise<Uint8Array> {
   return new Uint8Array(Buffer.concat(chunks));
 }
 
-function isLocalOrigin(origin: string | undefined): boolean {
-  if (!origin) return false;
+function isSameOrigin(origin: string | undefined, host: string | undefined): boolean {
+  if (!origin || !host) return false;
   try {
-    const hostname = new URL(origin).hostname;
-    return hostname === "localhost" || hostname === "127.0.0.1";
+    return new URL(origin).host.toLowerCase() === host.toLowerCase();
   } catch {
     return false;
   }
@@ -69,7 +68,8 @@ export function localMediaUpload(): Plugin {
           return;
         }
 
-        if (!isLocalOrigin(request.headers.origin)) {
+        const host = request.headers.host;
+        if (!isSameOrigin(request.headers.origin, host)) {
           sendJson(response, 403, { error: "Yerel medya isteğinin kaynağı geçersiz." });
           return;
         }
@@ -79,6 +79,17 @@ export function localMediaUpload(): Plugin {
         }
 
         try {
+          const address = server.httpServer?.address();
+          const localPort =
+            address && typeof address === "object" ? address.port : 3000;
+          const internalOrigin = `http://127.0.0.1:${localPort}`;
+          const authResponse = await fetch(`${internalOrigin}/api/me`, {
+            headers: request.headers.cookie ? { Cookie: request.headers.cookie } : undefined,
+          });
+          if (!authResponse.ok) {
+            sendJson(response, 401, { error: "Medya göndermek için giriş yapmalısınız." });
+            return;
+          }
           const body = await readRequestBody(request);
           const headers = new Headers();
           for (const [name, value] of Object.entries(request.headers)) {
@@ -177,8 +188,7 @@ export function localMediaUpload(): Plugin {
             telegramMessage.message_thread_id = Number(topicId);
           }
 
-          const host = request.headers.host || "localhost:3000";
-          const importResponse = await fetch(`http://${host}/api/telegram/import`, {
+          const importResponse = await fetch(`${internalOrigin}/api/telegram/import`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
