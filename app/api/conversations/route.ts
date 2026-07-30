@@ -59,6 +59,8 @@ export async function PATCH(request: Request) {
   if (payload.status) changes.status = payload.status;
   if (payload.assignedToEmail !== undefined) {
     changes.assignedToEmail = payload.assignedToEmail || null;
+    changes.assignmentSource = payload.assignedToEmail ? "manual" : null;
+    changes.assignmentFolderId = null;
   }
   if (payload.markRead) changes.unreadCount = 0;
 

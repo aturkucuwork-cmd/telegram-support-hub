@@ -6,6 +6,7 @@ import type { Conversation, Message, SystemStatus } from "./types";
 import { AuthCard, TeamPanel } from "./account-ui";
 import { MessageLogPanel } from "./message-log-panel";
 import { SetupWizard } from "./setup-wizard";
+import { FolderRulesPanel } from "./folder-rules-panel";
 
 type Filter = "all" | "mine" | "unassigned" | "groups" | "resolved";
 
@@ -98,6 +99,7 @@ export function SupportDesk() {
   const [teamOpen, setTeamOpen] = useState(false);
   const [messageLogsOpen, setMessageLogsOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
+  const [folderRulesOpen, setFolderRulesOpen] = useState(false);
   const [replyTarget, setReplyTarget] = useState<Message | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const setupAutoOpened = useRef(false);
@@ -304,6 +306,7 @@ export function SupportDesk() {
     setSelectedId(null);
     setTeamOpen(false);
     setMessageLogsOpen(false);
+    setFolderRulesOpen(false);
     const setupResponse = await fetch("/api/auth/setup", { cache: "no-store" });
     if (setupResponse.ok) {
       const setup = (await setupResponse.json()) as { needsSetup?: boolean };
@@ -339,6 +342,7 @@ export function SupportDesk() {
             {status.userGroupListener.connected ? "Telegram + grup akışı bağlı" : status.connected ? "Telegram bağlı" : status.configured ? "Bağlantı bekleniyor" : "Kurulum gerekli"}
           </span>
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setMessageLogsOpen(true)}>Mesaj logları</button> : null}
+          {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setFolderRulesOpen(true)}>Klasör atamaları</button> : null}
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setSetupOpen(true)}>Kurulum</button> : null}
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setTeamOpen(true)}>Ekip</button> : null}
           <button className="agent-avatar account-avatar" title={`${actor?.email} · Çıkış yap`} aria-label="Oturumu kapat" onClick={() => void logout()}>{initials(actor?.displayName || "D")}</button>
@@ -375,6 +379,10 @@ export function SupportDesk() {
               <button className="nav-item" onClick={() => setMessageLogsOpen(true)}>
                 <span className="nav-mark">≡</span>
                 <span>Mesaj logları</span>
+              </button>
+              <button className="nav-item" onClick={() => setFolderRulesOpen(true)}>
+                <span className="nav-mark">▰</span>
+                <span>Klasör atamaları</span>
               </button>
               <button className="nav-item" onClick={() => setTeamOpen(true)}>
                 <span className="nav-mark">+</span>
@@ -497,7 +505,7 @@ export function SupportDesk() {
                 <h2>{selected.title}</h2>
                 <p>{selected.username ? `@${selected.username}` : selected.type === "private" ? "Telegram müşterisi" : "Telegram grubu"}</p>
               </div>
-              <section className="detail-section"><h3>Sorumlu</h3><button className="assignment-button" onClick={() => void updateConversation({ assignedToEmail: selected.assignedToEmail ? null : actor?.email })}><span className="agent-avatar tiny">{selected.assignedToEmail ? initials(actor?.displayName || "D") : "+"}</span><span>{selected.assignedToEmail ? "Bana atandı" : "Bana ata"}</span><b>⌄</b></button></section>
+              <section className="detail-section"><h3>Sorumlu</h3><button className="assignment-button" onClick={() => void updateConversation({ assignedToEmail: selected.assignedToEmail === actor?.email ? null : actor?.email })}><span className="agent-avatar tiny">{selected.assignedToEmail ? initials(selected.assignedToEmail === actor?.email ? actor?.displayName || "D" : selected.assignedToEmail) : "+"}</span><span>{selected.assignedToEmail === actor?.email ? "Bana atandı" : selected.assignedToEmail || "Bana ata"}</span><b>⌄</b></button>{selected.assignmentSource === "telegram_folder" ? <p className="auto-assignment-note">Telegram klasör kuralıyla otomatik atandı.</p> : null}</section>
               <section className="detail-section"><h3>Durum</h3><div className="status-options">{(["open", "pending", "resolved"] as const).map((item) => <button key={item} className={selected.status === item ? "active" : ""} onClick={() => void updateConversation({ status: item })}>{item === "open" ? "Açık" : item === "pending" ? "Beklemede" : "Çözüldü"}</button>)}</div></section>
               <section className="detail-section facts"><h3>Konuşma bilgileri</h3><p><span>Kaynak</span><strong>Telegram</strong></p><p><span>Tür</span><strong>{selected.type === "private" ? "Özel sohbet" : selected.topicId ? "Grup konusu" : "Grup"}</strong></p><p><span>Sohbet ID</span><strong>{selected.telegramChatId}</strong></p>{selected.topicId ? <p><span>Konu ID</span><strong>{selected.topicId}</strong></p> : null}</section>
             </>
@@ -509,6 +517,7 @@ export function SupportDesk() {
       </main>
       {teamOpen && actor?.role === "admin" ? <TeamPanel actor={actor} onClose={() => setTeamOpen(false)} /> : null}
       {messageLogsOpen && actor?.role === "admin" ? <MessageLogPanel onClose={() => setMessageLogsOpen(false)} /> : null}
+      {folderRulesOpen && actor?.role === "admin" ? <FolderRulesPanel onClose={() => setFolderRulesOpen(false)} /> : null}
       {setupOpen && actor?.role === "admin" ? <SetupWizard status={status} onRefresh={loadStatus} onClose={() => setSetupOpen(false)} /> : null}
     </>
   );

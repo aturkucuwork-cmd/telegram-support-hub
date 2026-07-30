@@ -38,9 +38,39 @@ export type Conversation = {
   username: string | null;
   status: "open" | "pending" | "resolved";
   assignedToEmail: string | null;
+  assignmentSource: "manual" | "telegram_folder" | null;
+  assignmentFolderId: number | null;
   unreadCount: number;
   lastMessage: string;
   lastMessageAt: string;
+};
+
+export type TelegramFolderMember = {
+  id: number;
+  folderId: number;
+  telegramPeerId: string;
+  peerType: "private" | "group" | "supergroup" | "channel";
+  peerTitle: string;
+  peerUsername: string | null;
+};
+
+export type TelegramFolder = {
+  id: number;
+  telegramUserId: string;
+  telegramFolderId: number;
+  title: string;
+  assignedToEmail: string | null;
+  mappingUpdatedAt: string | null;
+  memberCount: number;
+  lastSyncedAt: string;
+  members: TelegramFolderMember[];
+};
+
+export type TelegramFolderUser = {
+  email: string;
+  displayName: string;
+  role: "admin" | "agent";
+  isActive: boolean;
 };
 
 export type Message = {

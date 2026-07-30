@@ -3,7 +3,7 @@ import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("builds the RelayDesk support application", async () => {
-  const [page, desk, setupWizard, localSetupApi, localSetupBridge, messageLogPanel, messageLogApi, reply, mediaReply, webhook, configure, status, worker] = await Promise.all([
+  const [page, desk, setupWizard, localSetupApi, localSetupBridge, messageLogPanel, messageLogApi, folderPanel, folderApi, folderAssignments, userListener, reply, mediaReply, webhook, configure, status, worker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/support-desk.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/setup-wizard.tsx", import.meta.url), "utf8"),
@@ -11,6 +11,10 @@ test("builds the RelayDesk support application", async () => {
     readFile(new URL("../scripts/local_setup_bridge.py", import.meta.url), "utf8"),
     readFile(new URL("../app/message-log-panel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/message-logs/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/folder-rules-panel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/telegram/folders/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/folder-assignments.ts", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/telegram_user_long_poll.py", import.meta.url), "utf8"),
     readFile(new URL("../app/api/reply/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/reply/media/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
@@ -40,6 +44,16 @@ test("builds the RelayDesk support application", async () => {
   assert.match(messageLogApi, /MESSAGE_LOG_RETENTION_DAYS/);
   assert.match(messageLogApi, /actor_email/);
   assert.match(messageLogApi, /listMessageLogUsers/);
+  assert.match(desk, /Klasör atamaları/);
+  assert.match(folderPanel, /TELEGRAM · OTOMATİK YÖNLENDİRME/);
+  assert.match(folderPanel, /Elle yapılmış kişi atamaları korunur/);
+  assert.match(folderApi, /requireAdmin/);
+  assert.match(folderApi, /x-telegram-bot-api-secret-token/);
+  assert.match(folderApi, /recalculateFolderAssignments/);
+  assert.match(folderAssignments, /assignmentSource/);
+  assert.match(folderAssignments, /telegram_folder/);
+  assert.match(userListener, /GetDialogFiltersRequest/);
+  assert.match(userListener, /FOLDERS_URL/);
   assert.match(reply, /reply_parameters/);
   assert.match(reply, /messageLogs/);
   assert.match(mediaReply, /reply_parameters/);

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import ctypes
+import datetime
 import json
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -14,7 +16,7 @@ from typing import Any
 import truststore
 from telethon import TelegramClient, errors, events, types, utils
 from telethon.sessions import StringSession
-from telethon.tl.functions.messages import GetForumTopicsRequest
+from telethon.tl.functions.messages import GetDialogFiltersRequest, GetForumTopicsRequest
 
 from telegram_user_session import load_session
 
@@ -25,8 +27,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = PROJECT_ROOT / ".env.local"
 IMPORT_URL = "http://localhost:3000/api/telegram/import"
 HEARTBEAT_URL = "http://localhost:3000/api/telegram/user-listener"
+FOLDERS_URL = "http://localhost:3000/api/telegram/folders"
 RETRY_MAX_SECONDS = 30
 INITIAL_MESSAGE_LIMIT = 100
+FOLDER_SYNC_SECONDS = 30
 MUTEX_NAME = "Local\\RelayDeskTelegramUserListener"
 
 
@@ -105,6 +109,143 @@ def chat_payload(entity: Any) -> dict[str, Any] | None:
             "username": entity.username,
         }
     return None
+
+
+def folder_peer_payload(entity: Any) -> dict[str, Any] | None:
+    chat = chat_payload(entity)
+    if chat is not None:
+        return {
+            "id": str(chat["id"]),
+            "type": str(chat["type"]),
+            "title": str(chat["title"]),
+            **({"username": chat["username"]} if chat.get("username") else {}),
+        }
+    if isinstance(entity, types.User):
+        title = " ".join(
+            part
+            for part in [entity.first_name, entity.last_name]
+            if isinstance(part, str) and part.strip()
+        ).strip()
+        return {
+            "id": str(entity.id),
+            "type": "private",
+            "title": title or entity.username or "Telegram sohbeti",
+            **({"username": entity.username} if entity.username else {}),
+        }
+    return None
+
+
+def peer_id(value: Any) -> int | None:
+    try:
+        return int(utils.get_peer_id(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def dialog_is_muted(dialog: Any) -> bool:
+    notify_settings = getattr(getattr(dialog, "dialog", None), "notify_settings", None)
+    mute_until = getattr(notify_settings, "mute_until", None)
+    if isinstance(mute_until, datetime.datetime):
+        current = datetime.datetime.now(datetime.timezone.utc)
+        if mute_until.tzinfo is None:
+            mute_until = mute_until.replace(tzinfo=datetime.timezone.utc)
+        return mute_until > current
+    if isinstance(mute_until, (int, float)):
+        return mute_until > time.time()
+    return False
+
+
+def dialog_matches_filter(dialog: Any, dialog_filter: Any) -> bool:
+    entity = dialog.entity
+    matches = False
+    if isinstance(entity, types.User):
+        if getattr(entity, "bot", False):
+            matches = bool(getattr(dialog_filter, "bots", False))
+        elif getattr(entity, "contact", False):
+            matches = bool(getattr(dialog_filter, "contacts", False))
+        else:
+            matches = bool(getattr(dialog_filter, "non_contacts", False))
+    elif isinstance(entity, types.Chat):
+        matches = bool(getattr(dialog_filter, "groups", False))
+    elif isinstance(entity, types.Channel):
+        matches = bool(
+            getattr(dialog_filter, "groups", False)
+            if getattr(entity, "megagroup", False)
+            else getattr(dialog_filter, "broadcasts", False)
+        )
+    if not matches:
+        return False
+    if getattr(dialog_filter, "exclude_archived", False) and getattr(dialog, "archived", False):
+        return False
+    if getattr(dialog_filter, "exclude_read", False) and not getattr(dialog, "unread_count", 0):
+        return False
+    if getattr(dialog_filter, "exclude_muted", False) and dialog_is_muted(dialog):
+        return False
+    return True
+
+
+async def build_folder_snapshot(client: TelegramClient) -> list[dict[str, Any]]:
+    dialogs = [dialog async for dialog in client.iter_dialogs()]
+    entities = {
+        entity_id: dialog.entity
+        for dialog in dialogs
+        if (entity_id := peer_id(dialog.entity)) is not None
+    }
+    result = await client(GetDialogFiltersRequest())
+    dialog_filters = getattr(result, "filters", result)
+    folders: list[dict[str, Any]] = []
+
+    for dialog_filter in dialog_filters:
+        if not isinstance(dialog_filter, (types.DialogFilter, types.DialogFilterChatlist)):
+            continue
+        telegram_folder_id = getattr(dialog_filter, "id", None)
+        if not isinstance(telegram_folder_id, int) or telegram_folder_id <= 0:
+            continue
+        title_value = getattr(dialog_filter, "title", None)
+        title = getattr(title_value, "text", None) or str(title_value or "Telegram klasörü")
+        explicit_inputs = list(getattr(dialog_filter, "pinned_peers", []) or []) + list(
+            getattr(dialog_filter, "include_peers", []) or []
+        )
+        member_ids = {
+            value
+            for item in explicit_inputs
+            if (value := peer_id(item)) is not None
+        }
+        for dialog in dialogs:
+            if dialog_matches_filter(dialog, dialog_filter):
+                value = peer_id(dialog.entity)
+                if value is not None:
+                    member_ids.add(value)
+        excluded_ids = {
+            value
+            for item in (getattr(dialog_filter, "exclude_peers", []) or [])
+            if (value := peer_id(item)) is not None
+        }
+        member_ids.difference_update(excluded_ids)
+
+        unresolved_inputs = {
+            value: item
+            for item in explicit_inputs
+            if (value := peer_id(item)) is not None and value not in entities
+        }
+        for value, input_peer in unresolved_inputs.items():
+            try:
+                entities[value] = await client.get_entity(input_peer)
+            except (errors.RPCError, TypeError, ValueError):
+                continue
+
+        peers = [
+            payload
+            for value in sorted(member_ids)
+            if (payload := folder_peer_payload(entities.get(value))) is not None
+        ]
+        folders.append({
+            "id": telegram_folder_id,
+            "title": title.strip() or f"Telegram klasörü #{telegram_folder_id}",
+            "peers": peers,
+        })
+
+    return folders
 
 
 def sender_payload(sender: Any, account: Any, outgoing: bool) -> dict[str, Any]:
@@ -328,6 +469,28 @@ async def run_listener() -> None:
                 print(f"Dinleyici durumu gönderilemedi: {error}")
             await asyncio.sleep(20)
 
+    async def folder_sync() -> None:
+        while True:
+            try:
+                folders = await build_folder_snapshot(client)
+                result = await asyncio.to_thread(
+                    request_json,
+                    FOLDERS_URL,
+                    secret,
+                    payload={
+                        "telegramUserId": str(bundle["telegram_user_id"]),
+                        "folders": folders,
+                    },
+                )
+                print(
+                    "Telegram klasörleri senkron: "
+                    f"{result.get('folderCount', len(folders))} klasör, "
+                    f"{result.get('assignedConversationCount', 0)} otomatik atama."
+                )
+            except (errors.RPCError, RuntimeError, TypeError, ValueError) as error:
+                print(f"Telegram klasörleri senkronlanamadı: {type(error).__name__}: {error}")
+            await asyncio.sleep(FOLDER_SYNC_SECONDS)
+
     async def enqueue_message(event: Any, *, edited: bool) -> None:
         try:
             entity = await event.get_chat()
@@ -367,6 +530,7 @@ async def run_listener() -> None:
     client.add_event_handler(on_edited_message, events.MessageEdited())
     worker_task = asyncio.create_task(queue_worker())
     heartbeat_task = asyncio.create_task(heartbeat())
+    folder_task = asyncio.create_task(folder_sync())
 
     try:
         print(f"Telegram grup akışı bağlı: {bundle['display_name']}")
@@ -444,6 +608,7 @@ async def run_listener() -> None:
     finally:
         worker_task.cancel()
         heartbeat_task.cancel()
+        folder_task.cancel()
         await client.disconnect()
 
 

@@ -8,6 +8,7 @@ RelayDesk, tek bir Telegram Business hesabını birden fazla destek çalışanı
 - Özel sohbetleri ve grupları tek gelen kutusunda gösterme
 - Gerçek zamanlıya yakın otomatik yenileme ve güncelleme tekilleştirme
 - Sohbet atama, durum ve öncelik yönetimi
+- Telegram sohbet klasörlerini çalışanlara otomatik yönlendirme
 - Metin, fotoğraf, belge, ses, video ve konum desteği
 - Telegram Business hesabı adına yanıt gönderme
 - D1 üzerinde kalıcı sohbet, mesaj, kullanıcı ve denetim kayıtları
@@ -95,6 +96,15 @@ Oturum `.telegram-user-session.dpapi` dosyasında Windows DPAPI ile mevcut Windo
 İlk bağlantıda daha önce panele hiç gelmemiş her uygun sohbetin son 100 mesajı alınır. Sonraki başlangıçlarda panelde kayıtlı son Telegram mesaj kimliğinden sonraki iletiler tamamlanır; ardından yeni mesajlar ve düzenlemeler canlı aktarılır.
 
 Takip edilen sohbetleri **okumak** için botun gruba eklenmesi gerekmez. Bu sohbetlere panelden **yanıt göndermek** için mevcut sürümde botun ilgili grupta bulunması ve gönderme yetkisine sahip olması gerekir.
+
+### Telegram klasörlerini çalışanlara yönlendirme
+
+1. Normal Telegram hesabında **Ayarlar → Sohbet Klasörleri** bölümünden klasör oluşturun.
+2. İlgili özel sohbetleri, grupları veya kanalları bu klasöre ekleyin.
+3. RelayDesk'te yönetici hesabıyla **Klasör atamaları** ekranını açın.
+4. Telegram klasörünün karşısından sorumlu çalışanı seçin.
+
+Klasör üyelikleri çalışan dinleyici tarafından en geç 30 saniyede bir yenilenir. Klasöre sonradan eklenen konuşmalar otomatik atanır; klasörden çıkarılan konuşmaların yalnızca klasör kaynaklı ataması kaldırılır. RelayDesk'te elle yapılmış kişi atamaları klasör senkronu tarafından değiştirilmez. Bir sohbet birden fazla atanmış klasörde bulunuyorsa en son değiştirilen klasör kuralı geçerlidir.
 
 ### Eski sohbetleri ve grupları içe aktarma
 

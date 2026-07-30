@@ -55,6 +55,49 @@ export const telegramUserListeners = sqliteTable("telegram_user_listeners", {
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const telegramFolders = sqliteTable(
+  "telegram_folders",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    telegramUserId: text("telegram_user_id").notNull(),
+    telegramFolderId: integer("telegram_folder_id").notNull(),
+    title: text("title").notNull(),
+    assignedToEmail: text("assigned_to_email"),
+    mappingUpdatedAt: text("mapping_updated_at"),
+    memberCount: integer("member_count").notNull().default(0),
+    lastSyncedAt: text("last_synced_at").notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("telegram_folders_user_folder_unique").on(
+      table.telegramUserId,
+      table.telegramFolderId,
+    ),
+    index("telegram_folders_assignee_idx").on(table.assignedToEmail),
+  ],
+);
+
+export const telegramFolderMembers = sqliteTable(
+  "telegram_folder_members",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    folderId: integer("folder_id").notNull(),
+    telegramPeerId: text("telegram_peer_id").notNull(),
+    peerType: text("peer_type").notNull(),
+    peerTitle: text("peer_title").notNull(),
+    peerUsername: text("peer_username"),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("telegram_folder_members_folder_peer_unique").on(
+      table.folderId,
+      table.telegramPeerId,
+    ),
+    index("telegram_folder_members_peer_idx").on(table.telegramPeerId),
+  ],
+);
+
 export const conversations = sqliteTable(
   "conversations",
   {
@@ -68,6 +111,8 @@ export const conversations = sqliteTable(
     avatarSeed: text("avatar_seed"),
     status: text("status").notNull().default("open"),
     assignedToEmail: text("assigned_to_email"),
+    assignmentSource: text("assignment_source"),
+    assignmentFolderId: integer("assignment_folder_id"),
     unreadCount: integer("unread_count").notNull().default(0),
     lastMessage: text("last_message").notNull().default(""),
     lastMessageAt: text("last_message_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -82,6 +127,7 @@ export const conversations = sqliteTable(
     ),
     index("conversations_last_message_idx").on(table.lastMessageAt),
     index("conversations_assignee_idx").on(table.assignedToEmail),
+    index("conversations_assignment_folder_idx").on(table.assignmentFolderId),
   ],
 );
 

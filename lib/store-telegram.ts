@@ -11,6 +11,7 @@ import {
   personName,
   type TelegramMessage,
 } from "@/lib/telegram";
+import { findFolderAssignment } from "@/lib/folder-assignments";
 
 export const BOT_GROUP_CONNECTION_ID = "__telegram_bot_groups__";
 
@@ -73,6 +74,10 @@ export async function storeTelegramMessage(options: {
     )
     .limit(1);
 
+  const folderAssignment = !conversation || conversation.assignmentSource === null
+    ? await findFolderAssignment(chatId)
+    : null;
+
   const telegramMessageId = String(message.message_id);
   const [existing] = conversation
     ? await db
@@ -101,6 +106,9 @@ export async function storeTelegramMessage(options: {
         lastMessage: content.preview,
         lastMessageAt: sentAt,
         unreadCount: outgoing || edited || historical ? 0 : 1,
+        assignedToEmail: folderAssignment?.email ?? null,
+        assignmentSource: folderAssignment ? "telegram_folder" : null,
+        assignmentFolderId: folderAssignment?.folderId ?? null,
       })
       .returning();
   } else {
@@ -119,6 +127,13 @@ export async function storeTelegramMessage(options: {
         unreadCount: shouldIncrement
           ? sql`${conversations.unreadCount} + 1`
           : conversation.unreadCount,
+        ...(folderAssignment
+          ? {
+              assignedToEmail: folderAssignment.email,
+              assignmentSource: "telegram_folder",
+              assignmentFolderId: folderAssignment.folderId,
+            }
+          : {}),
       })
       .where(eq(conversations.id, conversation.id));
   }

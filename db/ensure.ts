@@ -44,6 +44,35 @@ const statements = [
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
+  `CREATE TABLE IF NOT EXISTS telegram_folders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telegram_user_id TEXT NOT NULL,
+    telegram_folder_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    assigned_to_email TEXT,
+    mapping_updated_at TEXT,
+    member_count INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS telegram_folders_user_folder_unique
+    ON telegram_folders (telegram_user_id, telegram_folder_id)`,
+  `CREATE INDEX IF NOT EXISTS telegram_folders_assignee_idx
+    ON telegram_folders (assigned_to_email)`,
+  `CREATE TABLE IF NOT EXISTS telegram_folder_members (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    folder_id INTEGER NOT NULL,
+    telegram_peer_id TEXT NOT NULL,
+    peer_type TEXT NOT NULL,
+    peer_title TEXT NOT NULL,
+    peer_username TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS telegram_folder_members_folder_peer_unique
+    ON telegram_folder_members (folder_id, telegram_peer_id)`,
+  `CREATE INDEX IF NOT EXISTS telegram_folder_members_peer_idx
+    ON telegram_folder_members (telegram_peer_id)`,
   `CREATE TABLE IF NOT EXISTS conversations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     connection_id TEXT NOT NULL,
@@ -55,6 +84,8 @@ const statements = [
     avatar_seed TEXT,
     status TEXT NOT NULL DEFAULT 'open',
     assigned_to_email TEXT,
+    assignment_source TEXT,
+    assignment_folder_id INTEGER,
     unread_count INTEGER NOT NULL DEFAULT 0,
     last_message TEXT NOT NULL DEFAULT '',
     last_message_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -135,6 +166,26 @@ export async function ensureSchema(): Promise<void> {
         "ALTER TABLE conversations ADD COLUMN topic_id TEXT NOT NULL DEFAULT ''",
       ).run();
     }
+    if (!columns.results.some((column) => column.name === "assignment_source")) {
+      await env.DB.prepare(
+        "ALTER TABLE conversations ADD COLUMN assignment_source TEXT",
+      ).run();
+    }
+    if (!columns.results.some((column) => column.name === "assignment_folder_id")) {
+      await env.DB.prepare(
+        "ALTER TABLE conversations ADD COLUMN assignment_folder_id INTEGER",
+      ).run();
+    }
+    await env.DB.prepare(
+      `CREATE INDEX IF NOT EXISTS conversations_assignment_folder_idx
+       ON conversations (assignment_folder_id)`,
+    ).run();
+    await env.DB.prepare(
+      `UPDATE conversations
+       SET assignment_source = 'manual'
+       WHERE assigned_to_email IS NOT NULL
+         AND assignment_source IS NULL`,
+    ).run();
 
     const agentColumns = await env.DB.prepare("PRAGMA table_info(agents)").all<{
       name: string;
