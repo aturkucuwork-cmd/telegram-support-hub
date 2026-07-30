@@ -73,6 +73,20 @@ export async function storeTelegramMessage(options: {
     )
     .limit(1);
 
+  const telegramMessageId = String(message.message_id);
+  const [existing] = conversation
+    ? await db
+        .select({ id: messages.id })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.conversationId, conversation.id),
+            eq(messages.telegramMessageId, telegramMessageId),
+          ),
+        )
+        .limit(1)
+    : [];
+
   if (!conversation) {
     [conversation] = await db
       .insert(conversations)
@@ -90,8 +104,8 @@ export async function storeTelegramMessage(options: {
       })
       .returning();
   } else {
-    const shouldIncrement = !historical && !outgoing && !edited;
-    const shouldRefreshPreview = !historical || sentAt >= conversation.lastMessageAt;
+    const shouldIncrement = !existing && !historical && !outgoing && !edited;
+    const shouldRefreshPreview = sentAt >= conversation.lastMessageAt;
     await db
       .update(conversations)
       .set({
@@ -108,18 +122,6 @@ export async function storeTelegramMessage(options: {
       })
       .where(eq(conversations.id, conversation.id));
   }
-
-  const telegramMessageId = String(message.message_id);
-  const [existing] = await db
-    .select({ id: messages.id })
-    .from(messages)
-    .where(
-      and(
-        eq(messages.conversationId, conversation.id),
-        eq(messages.telegramMessageId, telegramMessageId),
-      ),
-    )
-    .limit(1);
 
   const values = {
     updateId: updateId === undefined ? null : String(updateId),

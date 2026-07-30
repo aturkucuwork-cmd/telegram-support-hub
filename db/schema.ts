@@ -44,6 +44,17 @@ export const telegramConnections = sqliteTable("telegram_connections", {
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const telegramUserListeners = sqliteTable("telegram_user_listeners", {
+  id: text("id").primaryKey(),
+  telegramUserId: text("telegram_user_id").notNull(),
+  displayName: text("display_name").notNull(),
+  username: text("username"),
+  isEnabled: integer("is_enabled", { mode: "boolean" }).notNull().default(true),
+  lastHeartbeatAt: text("last_heartbeat_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const conversations = sqliteTable(
   "conversations",
   {

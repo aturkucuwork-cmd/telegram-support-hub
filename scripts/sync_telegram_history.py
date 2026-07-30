@@ -153,12 +153,12 @@ def chat_from_entity(entity: Any) -> tuple[str, dict[str, Any]] | None:
             },
         )
 
-    if isinstance(entity, types.Channel) and getattr(entity, "megagroup", False):
+    if isinstance(entity, types.Channel):
         return (
             "group",
             {
                 "id": utils.get_peer_id(entity),
-                "type": "supergroup",
+                "type": "supergroup" if getattr(entity, "megagroup", False) else "channel",
                 "title": entity.title or "Telegram grubu",
                 "username": entity.username,
             },

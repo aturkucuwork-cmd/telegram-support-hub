@@ -6,6 +6,8 @@
 __pycache__/
 *.pyc
 /.sync-status.json
+/.telegram-user-session.dpapi
+/.telegram-user-session.dpapi.tmp
 /.pnp
 .pnp.*
 .yarn/*

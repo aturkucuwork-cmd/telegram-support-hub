@@ -1,7 +1,7 @@
 import { desc } from "drizzle-orm";
 import { getDb } from "@/db";
 import { ensureSchema } from "@/db/ensure";
-import { telegramConnections } from "@/db/schema";
+import { telegramConnections, telegramUserListeners } from "@/db/schema";
 import { requireActor } from "@/lib/auth";
 import {
   telegramApi,
@@ -43,9 +43,18 @@ export async function GET(request: Request) {
     .from(telegramConnections)
     .orderBy(desc(telegramConnections.updatedAt))
     .limit(1);
+  const [userListener] = await getDb()
+    .select()
+    .from(telegramUserListeners)
+    .orderBy(desc(telegramUserListeners.lastHeartbeatAt))
+    .limit(1);
   const config = telegramConfig();
   const configured = Boolean(config.botToken && config.webhookSecret);
   const groupMessageAccess = await getGroupMessageAccess(configured);
+  const userListenerConnected = Boolean(
+    userListener?.isEnabled &&
+      Date.parse(userListener.lastHeartbeatAt) > Date.now() - 90_000,
+  );
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
   const isLocal =
@@ -60,6 +69,12 @@ export async function GET(request: Request) {
     deliveryMode: isLocal ? "polling" : "webhook",
     webhookUrl: `${origin}/api/telegram/webhook`,
     groupMessageAccess,
+    userGroupListener: {
+      connected: userListenerConnected,
+      displayName: userListener?.displayName ?? null,
+      username: userListener?.username ?? null,
+      lastHeartbeatAt: userListener?.lastHeartbeatAt ?? null,
+    },
     actor,
   });
 }

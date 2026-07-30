@@ -65,6 +65,26 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start-local-telegram.ps1
 
 `RelayDesk Telegram Bağlantısı` terminali açık kaldığı sürece yeni mesajlar alınır. Daha önce botta bir public webhook tanımlıysa araç, onu kaldırmadan önce onay ister ve bekleyen güncellemeleri silmez.
 
+### Takip edilen grup ve kanalları canlı bağlama
+
+Normal Telegram hesabınızda takip ettiğiniz grup, süpergrup, forum konusu ve kanalların bot eklemeden panele akması için bir kez kullanıcı dinleyicisini bağlayın:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\configure-telegram-user-listener.ps1
+```
+
+1. `my.telegram.org` üzerinden aldığınız `api_id` değerini girin.
+2. `api_hash` değerini girin; yazarken terminalde görünmez.
+3. Telefon numaranızı ülke koduyla yazın ve Telegram uygulamasına gelen giriş kodunu girin.
+4. Hesapta iki aşamalı doğrulama varsa parolayı girin; bu değer de terminalde görünmez.
+5. Başarılı bağlantıdan sonra `RelayDesk Grup ve Kanal Akışı` penceresini açık bırakın.
+
+Oturum `.telegram-user-session.dpapi` dosyasında Windows DPAPI ile mevcut Windows kullanıcısına bağlı olarak şifrelenir; Git tarafından yok sayılır. `api_hash`, Telegram oturumu ve giriş bilgileri D1 veritabanına veya tarayıcıya yazılmaz. Daha sonraki RelayDesk başlangıçlarında dinleyici otomatik açılır.
+
+İlk bağlantıda daha önce panele hiç gelmemiş her uygun sohbetin son 100 mesajı alınır. Sonraki başlangıçlarda panelde kayıtlı son Telegram mesaj kimliğinden sonraki iletiler tamamlanır; ardından yeni mesajlar ve düzenlemeler canlı aktarılır.
+
+Takip edilen sohbetleri **okumak** için botun gruba eklenmesi gerekmez. Bu sohbetlere panelden **yanıt göndermek** için mevcut sürümde botun ilgili grupta bulunması ve gönderme yetkisine sahip olması gerekir.
+
 ### Eski sohbetleri ve grupları içe aktarma
 
 Bot API geçmiş mesajları geriye dönük vermediği için ilk kurulumdan önceki özel sohbetler ve gruplar tek kullanımlık kullanıcı API oturumuyla içe aktarılır:
@@ -73,9 +93,9 @@ Bot API geçmiş mesajları geriye dönük vermediği için ilk kurulumdan önce
 powershell -ExecutionPolicy Bypass -File .\scripts\sync-telegram-history.ps1
 ```
 
-Varsayılan olarak en son 100 uygun sohbetten, sohbet başına son 100 mesaj alınır; bu sayılar terminalde değiştirilebilir. Araç yalnızca özel sohbetleri, normal grupları ve süper grupları aktarır; yayın kanallarını ve bot sohbetlerini atlar. Giriş bilgileri bellekte tutulur, kalıcı kullanıcı oturumu oluşturulmaz ve işlem sonunda oturum kapatılır.
+Varsayılan olarak en son 100 uygun sohbetten, sohbet başına son 100 mesaj alınır; bu sayılar terminalde değiştirilebilir. Araç özel sohbetleri, normal grupları, süper grupları ve yayın kanallarını aktarır; bot sohbetlerini atlar. Giriş bilgileri bellekte tutulur, kalıcı kullanıcı oturumu oluşturulmaz ve işlem sonunda oturum kapatılır.
 
-Gruplardaki yeni mesajların senkron kalması ve panelden yanıt verilebilmesi için botun her ilgili gruba eklenmesi gerekir. Tüm normal grup mesajlarını almak için BotFather'da **Group Privacy** kapatılmalı veya bot grupta yönetici olmalıdır.
+Yeni grup ve kanal mesajlarını bot üyeliği olmadan senkron tutmak için yukarıdaki kalıcı kullanıcı dinleyicisini kullanın. Panelden Bot API ile grup yanıtı göndermek için botun ilgili grupta bulunması gerekir.
 
 ## Kontroller
 

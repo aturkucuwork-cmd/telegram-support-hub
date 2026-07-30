@@ -339,19 +339,19 @@ export function SupportDesk() {
           <span className="product-chip">TELEGRAM</span>
         </div>
         <div className="topbar-actions">
-          <span className={`connection-pill ${status.connected ? "online" : "offline"}`}>
+          <span className={`connection-pill ${status.connected || status.userGroupListener.connected ? "online" : "offline"}`}>
             <span className="status-dot" />
-            {status.connected ? "Telegram bağlı" : status.configured ? "Bağlantı bekleniyor" : "Kurulum gerekli"}
+            {status.userGroupListener.connected ? "Telegram + grup akışı bağlı" : status.connected ? "Telegram bağlı" : status.configured ? "Bağlantı bekleniyor" : "Kurulum gerekli"}
           </span>
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setMessageLogsOpen(true)}>Mesaj logları</button> : null}
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setTeamOpen(true)}>Ekip</button> : null}
           <button className="agent-avatar account-avatar" title={`${actor?.email} · Çıkış yap`} aria-label="Oturumu kapat" onClick={() => void logout()}>{initials(actor?.displayName || "D")}</button>
         </div>
       </header>
-      {status.groupMessageAccess === "limited" ? (
+      {status.groupMessageAccess === "limited" && !status.userGroupListener.connected ? (
         <div className="group-access-warning" role="status">
-          <strong>Grup mesajları sınırlı.</strong>
-          <span>@BotFather → /setprivacy → botu seçin → Disable; ardından botu mevcut gruplara yeniden ekleyin veya grup yöneticisi yapın.</span>
+          <strong>Takip edilen grup akışı bekleniyor.</strong>
+          <span>Telegram kullanıcı dinleyicisini bir kez bağladığınızda hesabınızdaki grup ve kanallar canlı gelecektir.</span>
         </div>
       ) : null}
 

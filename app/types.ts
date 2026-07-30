@@ -19,6 +19,12 @@ export type SystemStatus = {
   deliveryMode: "polling" | "webhook";
   webhookUrl: string;
   groupMessageAccess: "all" | "limited" | "unknown";
+  userGroupListener: {
+    connected: boolean;
+    displayName: string | null;
+    username: string | null;
+    lastHeartbeatAt: string | null;
+  };
   actor: Actor;
 };
 

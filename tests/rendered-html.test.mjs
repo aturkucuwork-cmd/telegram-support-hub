@@ -40,6 +40,7 @@ test("builds the RelayDesk support application", async () => {
   assert.match(webhook, /delete\(webhookUpdates\)/);
   assert.match(configure, /channel_post/);
   assert.match(status, /groupMessageAccess/);
-  assert.match(desk, /Grup mesajları sınırlı/);
+  assert.match(status, /userGroupListener/);
+  assert.match(desk, /Takip edilen grup akışı bekleniyor/);
   assert.equal(worker, undefined);
 });

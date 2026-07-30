@@ -7,6 +7,8 @@ $envPath = Join-Path $projectRoot ".env.local"
 $configureScript = Join-Path $PSScriptRoot "configure-local-telegram.ps1"
 $serverScript = Join-Path $PSScriptRoot "run-relaydesk-server.ps1"
 $pollerScript = Join-Path $PSScriptRoot "telegram_long_poll.py"
+$userListenerRunner = Join-Path $PSScriptRoot "run-telegram-user-listener.ps1"
+$userSessionPath = Join-Path $projectRoot ".telegram-user-session.dpapi"
 $pythonPath = Join-Path $projectRoot ".venv\Scripts\python.exe"
 $requirementsPath = Join-Path $projectRoot "requirements-connect.txt"
 
@@ -100,5 +102,23 @@ Write-Host ""
 Write-Host "RelayDesk hazır: http://localhost:3000" -ForegroundColor Green
 Write-Host "Bu pencere açık kaldığı sürece Telegram mesajları alınır." -ForegroundColor Cyan
 Write-Host ""
+
+if (Test-Path -LiteralPath $userSessionPath) {
+    $userListenerProcess = Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { ([string]$_.CommandLine).Contains("telegram_user_long_poll.py") } |
+        Select-Object -First 1
+    if (-not $userListenerProcess) {
+        Start-Process powershell.exe `
+            -WorkingDirectory $projectRoot `
+            -ArgumentList @("-NoExit", "-ExecutionPolicy", "Bypass", "-File", $userListenerRunner)
+        Write-Host "Takip edilen grup ve kanal akışı ayrı pencerede başlatıldı." -ForegroundColor Green
+    }
+    else {
+        Write-Host "Takip edilen grup ve kanal akışı zaten çalışıyor." -ForegroundColor Green
+    }
+}
+else {
+    Write-Host "Takip edilen gruplar için bir kez Telegram kullanıcı kurulumu yapılmalıdır." -ForegroundColor Yellow
+}
 
 & $pythonPath $pollerScript

@@ -34,6 +34,16 @@ const statements = [
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
+  `CREATE TABLE IF NOT EXISTS telegram_user_listeners (
+    id TEXT PRIMARY KEY,
+    telegram_user_id TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    username TEXT,
+    is_enabled INTEGER NOT NULL DEFAULT 1,
+    last_heartbeat_at TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
   `CREATE TABLE IF NOT EXISTS conversations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     connection_id TEXT NOT NULL,
