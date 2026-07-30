@@ -82,8 +82,8 @@ $ready = $false
 for ($attempt = 0; $attempt -lt 30; $attempt++) {
     Start-Sleep -Seconds 1
     try {
-        $status = Invoke-RestMethod -Method Get -Uri "http://localhost:3000/api/status" -TimeoutSec 3
-        if ($status.configured) {
+        $health = Invoke-WebRequest -Method Get -Uri "http://localhost:3000/api/auth/setup" -UseBasicParsing -TimeoutSec 3
+        if ($health.StatusCode -eq 200) {
             $ready = $true
             break
         }

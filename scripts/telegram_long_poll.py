@@ -16,7 +16,7 @@ truststore.inject_into_ssl()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = PROJECT_ROOT / ".env.local"
-LOCAL_STATUS_URL = "http://localhost:3000/api/status"
+LOCAL_STATUS_URL = "http://localhost:3000/api/auth/setup"
 LOCAL_WEBHOOK_URL = "http://localhost:3000/api/telegram/webhook"
 ALLOWED_UPDATES = [
     "business_connection",
@@ -97,6 +97,9 @@ def verify_local_relay() -> dict[str, Any]:
         raise LocalRelayError(
             "RelayDesk yerel sunucusuna ulaşılamadı: http://localhost:3000"
         ) from error
+
+    if "needsSetup" in status:
+        return {"configured": True, "connected": True}
 
     if not status.get("configured"):
         raise LocalRelayError(
