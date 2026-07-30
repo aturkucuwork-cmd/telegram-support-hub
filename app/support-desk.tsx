@@ -54,6 +54,19 @@ function attachmentLabel(message: Message) {
   return labels[message.contentType] || "Ek";
 }
 
+async function readResponseData(response: Response): Promise<{ error?: string }> {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text) as { error?: string };
+  } catch {
+    if (response.status === 413 || /payload too large/i.test(text)) {
+      return { error: "Dosya yükleme sınırını aştı." };
+    }
+    return { error: text.slice(0, 300) };
+  }
+}
+
 export function SupportDesk() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -174,6 +187,10 @@ export function SupportDesk() {
         const formData = new FormData();
         formData.set("conversationId", String(selected.id));
         formData.set("caption", text);
+        formData.set("chatId", selected.telegramChatId);
+        formData.set("connectionId", selected.connectionId);
+        formData.set("topicId", selected.topicId || "");
+        formData.set("isGroup", String(selected.type !== "private"));
         formData.set("file", attachment, attachment.name);
         response = await fetch("/api/reply/media", {
           method: "POST",
@@ -186,7 +203,7 @@ export function SupportDesk() {
           body: JSON.stringify({ conversationId: selected.id, text }),
         });
       }
-      const data = (await response.json()) as { error?: string };
+      const data = await readResponseData(response);
       if (!response.ok) throw new Error(data.error || "Mesaj gönderilemedi.");
       setDraft("");
       setAttachment(null);
@@ -227,7 +244,7 @@ export function SupportDesk() {
   async function configureWebhook() {
     setError(null);
     const response = await fetch("/api/telegram/configure", { method: "POST" });
-    const data = (await response.json()) as { error?: string };
+    const data = await readResponseData(response);
     if (!response.ok) {
       setError(data.error || "Webhook etkinleştirilemedi.");
       return;
