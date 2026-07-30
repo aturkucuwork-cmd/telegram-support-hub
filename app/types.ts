@@ -51,3 +51,14 @@ export type Message = {
   isDeleted: boolean;
   sentAt: string;
 };
+
+export type MessageLog = {
+  id: number;
+  conversationId: number;
+  telegramMessageId: string;
+  actorEmail: string;
+  actorDisplayName: string;
+  conversationTitle: string;
+  messageText: string;
+  sentAt: string;
+};

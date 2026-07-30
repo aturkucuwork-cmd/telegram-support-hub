@@ -4,6 +4,7 @@ import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useSta
 import Image from "next/image";
 import type { Conversation, Message, SystemStatus } from "./types";
 import { AuthCard, TeamPanel } from "./account-ui";
+import { MessageLogPanel } from "./message-log-panel";
 
 type Filter = "all" | "mine" | "unassigned" | "groups" | "resolved";
 
@@ -95,6 +96,7 @@ export function SupportDesk() {
   const [mobileListOpen, setMobileListOpen] = useState(true);
   const [setupRequired, setSetupRequired] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
+  const [messageLogsOpen, setMessageLogsOpen] = useState(false);
   const [replyTarget, setReplyTarget] = useState<Message | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -301,6 +303,7 @@ export function SupportDesk() {
     setMessages([]);
     setSelectedId(null);
     setTeamOpen(false);
+    setMessageLogsOpen(false);
     const setupResponse = await fetch("/api/auth/setup", { cache: "no-store" });
     if (setupResponse.ok) {
       const setup = (await setupResponse.json()) as { needsSetup?: boolean };
@@ -335,6 +338,7 @@ export function SupportDesk() {
             <span className="status-dot" />
             {status.connected ? "Telegram bağlı" : status.configured ? "Bağlantı bekleniyor" : "Kurulum gerekli"}
           </span>
+          {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setMessageLogsOpen(true)}>Mesaj logları</button> : null}
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setTeamOpen(true)}>Ekip</button> : null}
           <button className="agent-avatar account-avatar" title={`${actor?.email} · Çıkış yap`} aria-label="Oturumu kapat" onClick={() => void logout()}>{initials(actor?.displayName || "D")}</button>
         </div>
@@ -360,10 +364,16 @@ export function SupportDesk() {
           ))}
           <div className="nav-spacer" />
           {actor?.role === "admin" ? (
-            <button className="nav-item" onClick={() => setTeamOpen(true)}>
-              <span className="nav-mark">+</span>
-              <span>Ekip yönetimi</span>
-            </button>
+            <>
+              <button className="nav-item" onClick={() => setMessageLogsOpen(true)}>
+                <span className="nav-mark">≡</span>
+                <span>Mesaj logları</span>
+              </button>
+              <button className="nav-item" onClick={() => setTeamOpen(true)}>
+                <span className="nav-mark">+</span>
+                <span>Ekip yönetimi</span>
+              </button>
+            </>
           ) : null}
           <div className="agent-card">
             <span className="agent-avatar small">{initials(actor?.displayName || "D")}</span>
@@ -491,6 +501,7 @@ export function SupportDesk() {
       </div>
       </main>
       {teamOpen && actor?.role === "admin" ? <TeamPanel actor={actor} onClose={() => setTeamOpen(false)} /> : null}
+      {messageLogsOpen && actor?.role === "admin" ? <MessageLogPanel onClose={() => setMessageLogsOpen(false)} /> : null}
     </>
   );
 }

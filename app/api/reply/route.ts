@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { ensureSchema } from "@/db/ensure";
-import { auditLogs, conversations } from "@/db/schema";
+import { auditLogs, conversations, messageLogs } from "@/db/schema";
 import { requireActor } from "@/lib/auth";
+import { pruneExpiredMessageLogs } from "@/lib/message-logs";
 import { resolveReplyParameters } from "@/lib/reply";
 import { BOT_GROUP_CONNECTION_ID, storeTelegramMessage } from "@/lib/store-telegram";
 import { telegramApi, type TelegramMessage } from "@/lib/telegram";
@@ -63,6 +64,19 @@ export async function POST(request: Request) {
         replyToMessageId: replyParameters?.message_id,
       }),
     });
+    await db
+      .insert(messageLogs)
+      .values({
+        conversationId,
+        telegramMessageId: String(message.message_id),
+        actorEmail: actor.email,
+        actorDisplayName: actor.displayName,
+        conversationTitle: conversation.title,
+        messageText: text,
+        sentAt: new Date().toISOString(),
+      })
+      .onConflictDoNothing();
+    await pruneExpiredMessageLogs();
     return Response.json({ ok: true, message });
   } catch (error) {
     return Response.json(

@@ -121,3 +121,25 @@ export const auditLogs = sqliteTable(
   },
   (table) => [index("audit_logs_conversation_idx").on(table.conversationId)],
 );
+
+export const messageLogs = sqliteTable(
+  "message_logs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    conversationId: integer("conversation_id").notNull(),
+    telegramMessageId: text("telegram_message_id").notNull(),
+    actorEmail: text("actor_email").notNull(),
+    actorDisplayName: text("actor_display_name").notNull(),
+    conversationTitle: text("conversation_title").notNull(),
+    messageText: text("message_text").notNull(),
+    sentAt: text("sent_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("message_logs_conversation_telegram_unique").on(
+      table.conversationId,
+      table.telegramMessageId,
+    ),
+    index("message_logs_sent_at_idx").on(table.sentAt),
+    index("message_logs_actor_email_idx").on(table.actorEmail),
+  ],
+);

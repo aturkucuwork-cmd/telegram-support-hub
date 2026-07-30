@@ -3,9 +3,11 @@ import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("builds the RelayDesk support application", async () => {
-  const [page, desk, reply, mediaReply, webhook, worker] = await Promise.all([
+  const [page, desk, messageLogPanel, messageLogApi, reply, mediaReply, webhook, worker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/support-desk.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/message-log-panel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/message-logs/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/reply/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/reply/media/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
@@ -17,7 +19,13 @@ test("builds the RelayDesk support application", async () => {
   assert.match(desk, /Webhook’u etkinleştir/);
   assert.match(desk, /↩ Yanıtla/);
   assert.match(desk, /replyToMessageId/);
+  assert.match(desk, /Mesaj logları/);
+  assert.match(messageLogPanel, /30 GÜNLÜK KAYIT/);
+  assert.match(messageLogPanel, /Fotoğraf ve videolar kaydedilmez/);
+  assert.match(messageLogApi, /requireAdmin/);
+  assert.match(messageLogApi, /MESSAGE_LOG_RETENTION_DAYS/);
   assert.match(reply, /reply_parameters/);
+  assert.match(reply, /messageLogs/);
   assert.match(mediaReply, /reply_parameters/);
   assert.match(webhook, /x-telegram-bot-api-secret-token/);
   assert.match(webhook, /business_message/);

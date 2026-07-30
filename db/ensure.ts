@@ -92,6 +92,22 @@ const statements = [
   )`,
   `CREATE INDEX IF NOT EXISTS audit_logs_conversation_idx
     ON audit_logs (conversation_id)`,
+  `CREATE TABLE IF NOT EXISTS message_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id INTEGER NOT NULL,
+    telegram_message_id TEXT NOT NULL,
+    actor_email TEXT NOT NULL,
+    actor_display_name TEXT NOT NULL,
+    conversation_title TEXT NOT NULL,
+    message_text TEXT NOT NULL,
+    sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS message_logs_conversation_telegram_unique
+    ON message_logs (conversation_id, telegram_message_id)`,
+  `CREATE INDEX IF NOT EXISTS message_logs_sent_at_idx
+    ON message_logs (sent_at)`,
+  `CREATE INDEX IF NOT EXISTS message_logs_actor_email_idx
+    ON message_logs (actor_email)`,
 ];
 
 export async function ensureSchema(): Promise<void> {
@@ -141,6 +157,54 @@ export async function ensureSchema(): Promise<void> {
          ON conversations (connection_id, telegram_chat_id, topic_id)`,
       ),
     ]);
+
+    await env.DB.prepare(
+      `INSERT OR IGNORE INTO message_logs (
+        conversation_id,
+        telegram_message_id,
+        actor_email,
+        actor_display_name,
+        conversation_title,
+        message_text,
+        sent_at
+      )
+      SELECT
+        audit_logs.conversation_id,
+        CAST(
+          CASE
+            WHEN json_valid(audit_logs.detail)
+            THEN json_extract(audit_logs.detail, '$.telegramMessageId')
+          END AS TEXT
+        ),
+        audit_logs.actor_email,
+        COALESCE(agents.display_name, audit_logs.actor_email),
+        conversations.title,
+        messages.text,
+        strftime('%Y-%m-%dT%H:%M:%SZ', audit_logs.created_at)
+      FROM audit_logs
+      INNER JOIN conversations
+        ON conversations.id = audit_logs.conversation_id
+      INNER JOIN messages
+        ON messages.conversation_id = audit_logs.conversation_id
+        AND messages.telegram_message_id = CAST(
+          CASE
+            WHEN json_valid(audit_logs.detail)
+            THEN json_extract(audit_logs.detail, '$.telegramMessageId')
+          END AS TEXT
+        )
+      LEFT JOIN agents
+        ON agents.email = audit_logs.actor_email
+      WHERE audit_logs.action = 'message_sent'
+        AND audit_logs.actor_email IS NOT NULL
+        AND json_valid(audit_logs.detail)
+        AND messages.content_type = 'text'
+        AND messages.text <> ''
+        AND audit_logs.created_at >= datetime('now', '-30 days')`,
+    ).run();
+
+    await env.DB.prepare(
+      "DELETE FROM message_logs WHERE sent_at < datetime('now', '-30 days')",
+    ).run();
   })();
 
   try {
