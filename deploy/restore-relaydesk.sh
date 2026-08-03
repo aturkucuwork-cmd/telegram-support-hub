@@ -30,10 +30,6 @@ if result != "ok":
     raise SystemExit(f"Restore kaynağı integrity_check başarısız: {result}")
 PY
 
-if [ -f "$destination_path" ]; then
-  DATABASE_PATH="$destination_path" "$project_root/deploy/backup-relaydesk.sh"
-fi
-
 services=(
   relaydesk-web.service
   relaydesk-telegram-poller.service
@@ -61,6 +57,8 @@ done
 
 services_stopped=0
 sidecar_backup_dir=""
+sidecar_snapshot_dir=""
+moved_snapshot_sidecars=()
 moved_sidecars=()
 
 rollback_sidecars() {
@@ -72,12 +70,29 @@ rollback_sidecars() {
   done
 }
 
+restore_sidecar_snapshot() {
+  local suffix
+  if [ -z "$sidecar_snapshot_dir" ] || [ ! -d "$sidecar_snapshot_dir" ]; then
+    return 0
+  fi
+  for suffix in "${moved_snapshot_sidecars[@]}"; do
+    if [ -e "$sidecar_snapshot_dir/$(basename "$destination_path")$suffix" ]; then
+      rm -f -- "$destination_path$suffix"
+      mv -- "$sidecar_snapshot_dir/$(basename "$destination_path")$suffix" "$destination_path$suffix"
+    fi
+  done
+  rm -rf -- "$sidecar_snapshot_dir"
+  sidecar_snapshot_dir=""
+}
+
 restore_services() {
   local exit_code="$?"
   local service
   local start_failed=0
   local ready=0
   trap - EXIT
+
+  restore_sidecar_snapshot
 
   if [ "$services_stopped" -eq 1 ]; then
     for service in "${active_services[@]}"; do
@@ -130,6 +145,25 @@ for service in "${active_services[@]}"; do
   fi
 done
 
+if [ -f "$destination_path" ]; then
+  snapshot_timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  sidecar_snapshot_dir="$destination_path.restore-sidecars-pending-$snapshot_timestamp"
+  for suffix in -wal -shm; do
+    sidecar_path="$destination_path$suffix"
+    if [ -e "$sidecar_path" ]; then
+      if [ -z "${moved_snapshot_sidecars[*]:-}" ]; then
+        install -d -m 0700 "$sidecar_snapshot_dir"
+      fi
+      cp -- "$sidecar_path" "$sidecar_snapshot_dir/$(basename "$destination_path")$suffix"
+      moved_snapshot_sidecars+=("$suffix")
+    fi
+  done
+fi
+
+if [ -f "$destination_path" ]; then
+  DATABASE_PATH="$destination_path" "$project_root/deploy/backup-relaydesk.sh"
+fi
+
 destination_dir="$(dirname "$destination_path")"
 install -d -o relaydesk -g relaydesk -m 0750 "$destination_dir"
 temporary_path="$destination_path.restore.tmp"
@@ -176,13 +210,22 @@ PY
 
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 sidecar_backup_dir="$destination_path.restore-sidecars-$timestamp"
-if [ -e "${destination_path}-wal" ] || [ -e "${destination_path}-shm" ]; then
+if [ "${#moved_snapshot_sidecars[@]}" -gt 0 ] || \
+   [ -e "${destination_path}-wal" ] || [ -e "${destination_path}-shm" ]; then
   install -d -o relaydesk -g relaydesk -m 0700 "$sidecar_backup_dir"
 fi
 for suffix in -wal -shm; do
   sidecar_path="$destination_path$suffix"
   sidecar_backup_path="$sidecar_backup_dir/$(basename "$destination_path")$suffix"
-  if [ -e "$sidecar_path" ]; then
+  snapshot_sidecar_path="$sidecar_snapshot_dir/$(basename "$destination_path")$suffix"
+  if [ -e "$snapshot_sidecar_path" ]; then
+    rm -f -- "$sidecar_path"
+    if ! mv -- "$snapshot_sidecar_path" "$sidecar_backup_path"; then
+      rollback_sidecars
+      exit 1
+    fi
+    moved_sidecars+=("$suffix")
+  elif [ -e "$sidecar_path" ]; then
     if ! mv -- "$sidecar_path" "$sidecar_backup_path"; then
       rollback_sidecars
       exit 1
@@ -190,6 +233,8 @@ for suffix in -wal -shm; do
     moved_sidecars+=("$suffix")
   fi
 done
+rm -rf -- "$sidecar_snapshot_dir"
+sidecar_snapshot_dir=""
 
 if ! mv -f -- "$temporary_path" "$destination_path"; then
   rollback_sidecars

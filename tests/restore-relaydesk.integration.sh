@@ -83,6 +83,7 @@ if [ ! -f "$writer_ready_path" ] || [ ! -f "$destination_path-wal" ] || [ ! -f "
   exit 1
 fi
 wal_sha256="$(sha256sum "$destination_path-wal" | awk '{print $1}')"
+shm_sha256="$(sha256sum "$destination_path-shm" | awk '{print $1}')"
 shm_size="$(stat -c '%s' "$destination_path-shm")"
 printf 'active\nactive\nactive\n' > "$state_path"
 
@@ -283,13 +284,15 @@ if [ "$(find "$sidecar_backup_dir" -mindepth 1 -maxdepth 1 -type f -printf '%f\n
   exit 1
 fi
 actual_wal_sha256="$(sha256sum "$sidecar_backup_dir/destination.sqlite-wal" | awk '{print $1}')"
+actual_shm_sha256="$(sha256sum "$sidecar_backup_dir/destination.sqlite-shm" | awk '{print $1}')"
 actual_shm_size="$(stat -c '%s' "$sidecar_backup_dir/destination.sqlite-shm")"
 if [ "$actual_wal_sha256" != "$wal_sha256" ] || \
+   [ "$actual_shm_sha256" != "$shm_sha256" ] || \
    [ "$actual_shm_size" != "$shm_size" ] || \
    [ ! -s "$sidecar_backup_dir/destination.sqlite-shm" ]; then
   echo "Restore sidecar backup contents were not preserved" >&2
-  echo "expected wal=$wal_sha256 shm_size=$shm_size" >&2
-  echo "actual wal=$actual_wal_sha256 shm_size=$actual_shm_size" >&2
+   echo "expected wal=$wal_sha256 shm=$shm_sha256 shm_size=$shm_size" >&2
+   echo "actual wal=$actual_wal_sha256 shm=$actual_shm_sha256 shm_size=$actual_shm_size" >&2
   exit 1
 fi
 
