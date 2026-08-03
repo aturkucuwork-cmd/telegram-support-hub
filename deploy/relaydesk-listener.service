@@ -1,0 +1,24 @@
+[Unit]
+Description=RelayDesk Telegram MTProto listener
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/var/lib/relaydesk/telegram-user-session.enc
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=relaydesk
+WorkingDirectory=/opt/relaydesk
+EnvironmentFile=/opt/relaydesk/.env.local
+ExecStart=/opt/relaydesk/.venv/bin/python -u scripts/telegram_user_long_poll.py
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ReadWritePaths=/var/lib/relaydesk
+
+[Install]
+WantedBy=multi-user.target

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-import ctypes
 import json
+import os
 import re
 import secrets
 import subprocess
+import sys
 import threading
+import traceback
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -31,12 +33,21 @@ truststore.inject_into_ssl()
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = PROJECT_ROOT / ".env.local"
 STATE_PATH = PROJECT_ROOT / ".local-setup-state.json"
-PYTHON_PATH = PROJECT_ROOT / ".venv" / "Scripts" / "python.exe"
+PYTHON_PATH = (
+    PROJECT_ROOT
+    / ".venv"
+    / ("Scripts" if os.name == "nt" else "bin")
+    / ("python.exe" if os.name == "nt" else "python")
+)
 USER_LISTENER_PATH = PROJECT_ROOT / "scripts" / "telegram_user_long_poll.py"
 HOST = "127.0.0.1"
 PORT = 8765
 MAX_BODY_BYTES = 64 * 1024
-CREATE_NO_WINDOW = 0x08000000
+MANAGED_SERVICES = (
+    "relaydesk-web.service",
+    "relaydesk-telegram-poller.service",
+    "relaydesk-listener.service",
+)
 
 
 class SetupError(RuntimeError):
@@ -55,7 +66,15 @@ def load_env() -> dict[str, str]:
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        values[key.strip()] = value.strip().strip("\"'")
+        key = key.strip()
+        value = value.strip().strip("\"'")
+        values[key] = value
+        # telegram_user_session.py reads SESSION_ENCRYPTION_KEY (and any other
+        # secret) straight from the real process environment. Under systemd
+        # (EnvironmentFile=.env.local) that's already the case; for direct/
+        # manual invocation of this bridge, mirror it here so both paths behave
+        # the same. setdefault() keeps a real env var taking precedence.
+        os.environ.setdefault(key, value)
     return values
 
 
@@ -75,7 +94,34 @@ def update_env(changes: dict[str, str]) -> None:
     for key, value in remaining.items():
         updated.append(f"{key}={value}")
     temporary = ENV_PATH.with_suffix(".local.tmp")
-    temporary.write_text("\n".join(updated).rstrip() + "\n", encoding="utf-8")
+    old_umask = os.umask(0o077)
+    try:
+        temporary.write_text("\n".join(updated).rstrip() + "\n", encoding="utf-8")
+        os.chmod(temporary, 0o600)
+        temporary.replace(ENV_PATH)
+        os.chmod(ENV_PATH, 0o600)
+    finally:
+        os.umask(old_umask)
+
+
+def restart_managed_services() -> None:
+    if os.name == "nt":
+        return
+    try:
+        subprocess.run(
+            ["sudo", "-n", "systemctl", "try-restart", *MANAGED_SERVICES],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+        raise SetupError(
+            "Ayarlar kaydedildi ancak RelayDesk servisleri yeniden başlatılamadı. "
+            "Provision adımındaki relaydesk sudo kuralını kontrol edin.",
+            status=503,
+            code="service_restart_failed",
+        ) from error
     temporary.replace(ENV_PATH)
 
 
@@ -131,12 +177,15 @@ def configure_bot(token: str) -> dict[str, Any]:
     telegram_bot_api(token, "deleteWebhook", {"drop_pending_updates": False})
     env = load_env()
     webhook_secret = env.get("TELEGRAM_WEBHOOK_SECRET") or secrets.token_hex(32)
+    internal_secret = env.get("INTERNAL_API_SECRET") or secrets.token_urlsafe(32)
     update_env(
         {
             "TELEGRAM_BOT_TOKEN": token,
             "TELEGRAM_WEBHOOK_SECRET": webhook_secret,
+            "INTERNAL_API_SECRET": internal_secret,
         }
     )
+    restart_managed_services()
     update_state(
         {
             "bot_username": bot["username"],
@@ -153,28 +202,32 @@ def configure_bot(token: str) -> dict[str, Any]:
     }
 
 
-def mark_hidden(path: Path) -> None:
-    if not path.exists():
-        return
-    attributes = ctypes.windll.kernel32.GetFileAttributesW(str(path))
-    if attributes != -1:
-        ctypes.windll.kernel32.SetFileAttributesW(str(path), attributes | 0x02)
-
-
 def start_user_listener() -> None:
     if not SESSION_PATH.exists():
         raise SetupError("Önce Telegram kullanıcı hesabını bağlayın.", status=409)
-    if not PYTHON_PATH.exists():
-        raise SetupError("RelayDesk Python ortamı bulunamadı.", status=503)
-    subprocess.Popen(
-        [str(PYTHON_PATH), "-u", str(USER_LISTENER_PATH)],
-        cwd=str(PROJECT_ROOT),
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=CREATE_NO_WINDOW,
-        close_fds=True,
-    )
+    if os.name == "nt":
+        # No systemd on a Windows dev/test machine: launch the listener
+        # directly instead, same as before the Linux/systemd migration.
+        if not PYTHON_PATH.exists():
+            raise SetupError("RelayDesk Python ortamı bulunamadı.", status=503)
+        subprocess.Popen(
+            [str(PYTHON_PATH), "-u", str(USER_LISTENER_PATH)],
+            cwd=str(PROJECT_ROOT),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+        )
+        return
+    try:
+        subprocess.run(
+            ["sudo", "-n", "systemctl", "start", "relaydesk-listener.service"],
+            check=True, capture_output=True, text=True, timeout=15,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError) as error:
+        raise SetupError(
+            "Dinleyici servisi başlatılamadı. relaydesk-listener.service kurulu mu kontrol edin.",
+        ) from error
 
 
 class TelegramSetupState:
@@ -220,7 +273,7 @@ class TelegramSetupState:
             api_hash,
             device_model="RelayDesk Setup Wizard",
             app_version="1.0",
-            system_version="Windows",
+            system_version="Linux" if os.name != "nt" else "Windows",
             receive_updates=False,
         )
         try:
@@ -271,7 +324,6 @@ class TelegramSetupState:
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }
         )
-        mark_hidden(SESSION_PATH)
         result = {
             "phase": "complete",
             "account": {
@@ -299,7 +351,7 @@ class TelegramSetupState:
             str(bundle["api_hash"]),
             device_model="RelayDesk Setup Wizard",
             app_version="1.0",
-            system_version="Windows",
+            system_version="Linux" if os.name != "nt" else "Windows",
             receive_updates=False,
         )
         try:
@@ -333,7 +385,7 @@ class TelegramSetupState:
             str(bundle["api_hash"]),
             device_model="RelayDesk Setup Wizard",
             app_version="1.0",
-            system_version="Windows",
+            system_version="Linux" if os.name != "nt" else "Windows",
             receive_updates=False,
         )
         try:
@@ -544,6 +596,8 @@ class SetupHandler(BaseHTTPRequestHandler):
                 return
             raise SetupError("Kurulum yolu bulunamadı.", status=404)
         except Exception as error:
+            if not isinstance(error, SetupError):
+                traceback.print_exc(file=sys.stderr)
             friendly = friendly_telegram_error(error)
             self._json(friendly.status, {"error": str(friendly), "code": friendly.code})
 
@@ -594,6 +648,8 @@ class SetupHandler(BaseHTTPRequestHandler):
                 return
             raise SetupError("Kurulum yolu bulunamadı.", status=404)
         except Exception as error:
+            if not isinstance(error, SetupError):
+                traceback.print_exc(file=sys.stderr)
             friendly = friendly_telegram_error(error)
             self._json(friendly.status, {"error": str(friendly), "code": friendly.code})
 

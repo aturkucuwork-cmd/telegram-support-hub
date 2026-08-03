@@ -69,3 +69,24 @@ test("builds the RelayDesk support application", async () => {
   assert.match(desk, /Takip edilen grup akışı bekleniyor/);
   assert.equal(worker, undefined);
 });
+
+test("P0 Linux services use one env source and start Bot API polling", async () => {
+  const [pollerUnit, webUnit, listenerUnit, bridgeUnit, bootstrap, envExample] = await Promise.all([
+    readFile(new URL("../deploy/relaydesk-telegram-poller.service", import.meta.url), "utf8"),
+    readFile(new URL("../deploy/relaydesk-web.service", import.meta.url), "utf8"),
+    readFile(new URL("../deploy/relaydesk-listener.service", import.meta.url), "utf8"),
+    readFile(new URL("../deploy/relaydesk-setup-bridge.service", import.meta.url), "utf8"),
+    readFile(new URL("../deploy/relaydesk-bootstrap.sh", import.meta.url), "utf8"),
+    readFile(new URL("../.env.example", import.meta.url), "utf8"),
+  ]);
+
+  for (const unit of [webUnit, listenerUnit, bridgeUnit, pollerUnit]) {
+    assert.match(unit, /User=relaydesk/);
+    assert.match(unit, /EnvironmentFile=\/opt\/relaydesk\/\.env\.local/);
+  }
+  assert.match(pollerUnit, /telegram_long_poll\.py/);
+  assert.match(pollerUnit, /Restart=on-failure/);
+  assert.match(bootstrap, /relaydesk-telegram-poller\.service/);
+  assert.doesNotMatch(bootstrap, /systemctl --user/);
+  assert.match(envExample, /INTERNAL_API_SECRET=/);
+});
