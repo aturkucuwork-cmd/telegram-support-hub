@@ -346,5 +346,19 @@ if [ "$(sed -n '3p' "$case_state")" != "inactive" ]; then
   exit 1
 fi
 
+prepare_case inactive-success inactive
+run_case 0 '' pass
+inactive_success_listener_state="$(sed -n '3p' "$case_state")"
+inactive_success_log=$'stop relaydesk-web.service\nstop relaydesk-telegram-poller.service\nstart relaydesk-web.service\nstart relaydesk-telegram-poller.service'
+if [ "$(cat "$case_log")" != "$inactive_success_log" ]; then
+  echo "Successful restore changed inactive listener service order" >&2
+  cat "$case_log" >&2
+  exit 1
+fi
+if [ "$inactive_success_listener_state" != "inactive" ]; then
+  echo "Successful restore unexpectedly started an inactive listener" >&2
+  exit 1
+fi
+
 echo "NOT RUN: concurrent live writer/restore and separate-host restore require a real Linux E2E environment."
 echo "PASS: real SQLite WAL fixture, sidecar preservation, integrity/count, and service-state recovery"
