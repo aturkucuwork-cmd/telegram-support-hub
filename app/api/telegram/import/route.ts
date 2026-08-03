@@ -4,13 +4,14 @@ import { conversations, messages } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import {
   BOT_GROUP_CONNECTION_ID,
+  MT_PROTO_USER_CONNECTION_ID,
   storeTelegramMessage,
 } from "@/lib/store-telegram";
 import { requireInternalApi } from "@/lib/internal-api";
 import { type TelegramMessage } from "@/lib/telegram";
 
 type ImportItem = {
-  source: "business" | "group";
+  source: "business" | "group" | "user";
   outgoing: boolean;
   historical?: boolean;
   edited?: boolean;
@@ -22,7 +23,7 @@ function isValidItem(value: unknown): value is ImportItem {
   const item = value as Partial<ImportItem>;
   const message = item.message;
   return (
-    (item.source === "business" || item.source === "group") &&
+    (item.source === "business" || item.source === "group" || item.source === "user") &&
     typeof item.outgoing === "boolean" &&
     (item.historical === undefined || typeof item.historical === "boolean") &&
     (item.edited === undefined || typeof item.edited === "boolean") &&
@@ -31,6 +32,7 @@ function isValidItem(value: unknown): value is ImportItem {
     Number.isInteger(message?.date) &&
     typeof message?.chat?.id === "number" &&
     ["private", "group", "supergroup", "channel"].includes(message?.chat?.type ?? "") &&
+    (message?.chat?.type !== "private" || message?.chat?.is_bot !== true) &&
     (item.source !== "business" || Boolean(message?.business_connection_id))
   );
 }
@@ -40,6 +42,10 @@ export async function GET(request: Request) {
   if (authorization) return authorization;
 
   await ensureSchema();
+  const connectionId = new URL(request.url).searchParams.get("connectionId") || BOT_GROUP_CONNECTION_ID;
+  if (![BOT_GROUP_CONNECTION_ID, MT_PROTO_USER_CONNECTION_ID].includes(connectionId)) {
+    return Response.json({ error: "Geçersiz bağlantı." }, { status: 400 });
+  }
   const rows = await getDb()
     .select({
       chatId: conversations.telegramChatId,
@@ -47,7 +53,7 @@ export async function GET(request: Request) {
     })
     .from(messages)
     .innerJoin(conversations, eq(messages.conversationId, conversations.id))
-    .where(eq(conversations.connectionId, BOT_GROUP_CONNECTION_ID))
+    .where(eq(conversations.connectionId, connectionId))
     .groupBy(conversations.telegramChatId);
 
   return Response.json({
@@ -79,7 +85,11 @@ export async function POST(request: Request) {
     await storeTelegramMessage({
       message: item.message,
       connectionId:
-        item.source === "group" ? BOT_GROUP_CONNECTION_ID : undefined,
+        item.source === "group"
+          ? BOT_GROUP_CONNECTION_ID
+          : item.source === "user"
+            ? MT_PROTO_USER_CONNECTION_ID
+            : undefined,
       outgoing: item.outgoing,
       historical: item.historical ?? true,
       edited: item.edited ?? false,

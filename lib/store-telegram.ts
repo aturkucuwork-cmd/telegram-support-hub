@@ -14,6 +14,7 @@ import {
 import { findFolderAssignment } from "@/lib/folder-assignments";
 
 export const BOT_GROUP_CONNECTION_ID = "__telegram_bot_groups__";
+export const MT_PROTO_USER_CONNECTION_ID = "__telegram_user__";
 
 export async function storeTelegramMessage(options: {
   message: TelegramMessage;

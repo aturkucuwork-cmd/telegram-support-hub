@@ -71,7 +71,10 @@ for line in lines:
     if key in defaults and key not in seen:
         seen.add(key)
         current = line.split("=", 1)[1].strip()
-        updated.append(line if current else f"{key}={defaults[key]}")
+        if key in {"DATABASE_PATH", "RELAYDESK_SESSION_PATH"}:
+            updated.append(f"{key}={defaults[key]}")
+        else:
+            updated.append(line if current else f"{key}={defaults[key]}")
     else:
         updated.append(line)
 for key, value in defaults.items():

@@ -172,6 +172,7 @@ export function SupportDesk() {
   }, [loadMessages, selectedId]);
 
   const selected = conversations.find((item) => item.id === selectedId) ?? null;
+  const selectedReadOnly = selected?.connectionId === "__telegram_user__";
   const actor = status?.actor ?? null;
 
   useEffect(() => {
@@ -220,7 +221,7 @@ export function SupportDesk() {
   async function sendReply(event: FormEvent) {
     event.preventDefault();
     const text = draft.trim();
-    if (!selected || (!text && !attachment) || sending) return;
+    if (!selected || selectedReadOnly || (!text && !attachment) || sending) return;
     setSending(true);
     setError(null);
     try {
@@ -480,18 +481,19 @@ export function SupportDesk() {
               </div>
 
               {error ? <div className="error-banner" role="alert">{error}<button onClick={() => setError(null)}>×</button></div> : null}
+              {selectedReadOnly ? <div className="composer-hint">Bu özel konuşma normal Telegram hesabından içe aktarıldı; panelden yanıt gönderme henüz desteklenmiyor.</div> : null}
               <form className="composer" onSubmit={sendReply}>
-                <label className={`attach-button ${sending || !status.connected ? "disabled" : ""}`} title="Fotoğraf veya MP4 video ekle">
+                <label className={`attach-button ${sending || selectedReadOnly || !status.connected ? "disabled" : ""}`} title="Fotoğraf veya MP4 video ekle">
                   <span>＋</span>
-                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4" disabled={sending || !status.connected} onChange={selectAttachment} />
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4" disabled={sending || selectedReadOnly || !status.connected} onChange={selectAttachment} />
                 </label>
                 <div className="composer-input">
                   {replyTarget ? <div className="reply-composer-preview"><div><strong>{messageSenderLabel(replyTarget)}</strong><span>{messageSummary(replyTarget)}</span></div><button type="button" onClick={() => setReplyTarget(null)} aria-label="Alıntılı yanıtı kaldır">×</button></div> : null}
                   {attachment ? <div className="selected-media"><span>{attachment.type.startsWith("image/") ? "Fotoğraf" : "Video"}</span><strong>{attachment.name}</strong><small>{(attachment.size / 1024 / 1024).toFixed(1)} MB</small><button type="button" onClick={clearAttachment} aria-label="Eki kaldır">×</button></div> : null}
-                  <textarea value={draft} maxLength={attachment ? 1024 : 4096} onChange={(event) => setDraft(event.target.value)} placeholder={attachment ? "Açıklama ekleyin…" : "Yanıtınızı yazın…"} rows={1} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />
+                  <textarea value={draft} disabled={selectedReadOnly} maxLength={attachment ? 1024 : 4096} onChange={(event) => setDraft(event.target.value)} placeholder={selectedReadOnly ? "Salt okunur Telegram konuşması" : attachment ? "Açıklama ekleyin…" : "Yanıtınızı yazın…"} rows={1} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />
                   <span className="composer-hint">Enter gönderir · Shift + Enter yeni satır</span>
                 </div>
-                <button className="send-button" disabled={(!draft.trim() && !attachment) || sending || !status.connected} aria-label="Mesaj gönder">{sending ? "…" : "↑"}</button>
+                <button className="send-button" disabled={selectedReadOnly || (!draft.trim() && !attachment) || sending || !status.connected} aria-label="Mesaj gönder">{sending ? "…" : "↑"}</button>
               </form>
             </>
           )}

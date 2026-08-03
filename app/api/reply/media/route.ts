@@ -6,6 +6,7 @@ import { isSameOriginRequest, requireActor } from "@/lib/auth";
 import { resolveReplyParameters } from "@/lib/reply";
 import {
   BOT_GROUP_CONNECTION_ID,
+  MT_PROTO_USER_CONNECTION_ID,
   storeTelegramMessage,
 } from "@/lib/store-telegram";
 import {
@@ -66,6 +67,12 @@ export async function POST(request: Request) {
     .limit(1);
   if (!conversation) {
     return Response.json({ error: "Konuşma bulunamadı." }, { status: 404 });
+  }
+  if (conversation.connectionId === MT_PROTO_USER_CONNECTION_ID) {
+    return Response.json(
+      { error: "Normal Telegram özel konuşmalarında panelden yanıt gönderme henüz desteklenmiyor." },
+      { status: 409 },
+    );
   }
   const replyParameters = await resolveReplyParameters(
     conversation.id,

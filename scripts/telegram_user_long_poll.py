@@ -31,6 +31,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = PROJECT_ROOT / ".env.local"
 LOCK_PATH = PROJECT_ROOT / ".telegram-user-long-poll.lock"
 IMPORT_URL = "http://localhost:3000/api/telegram/import"
+MT_PROTO_USER_CONNECTION_ID = "__telegram_user__"
 HEARTBEAT_URL = "http://localhost:3000/api/telegram/user-listener"
 FOLDERS_URL = "http://localhost:3000/api/telegram/folders"
 RETRY_MAX_SECONDS = 30
@@ -108,6 +109,21 @@ def acquire_single_instance() -> Any:
 
 
 def chat_payload(entity: Any) -> dict[str, Any] | None:
+    if isinstance(entity, types.User):
+        if getattr(entity, "bot", False):
+            return None
+        title = " ".join(
+            part
+            for part in [entity.first_name, entity.last_name]
+            if isinstance(part, str) and part.strip()
+        ).strip()
+        return {
+            "id": utils.get_peer_id(entity),
+            "type": "private",
+            "title": title or entity.username or "Telegram sohbeti",
+            "username": entity.username,
+            "is_bot": False,
+        }
     if isinstance(entity, types.Chat):
         return {
             "id": utils.get_peer_id(entity),
@@ -127,6 +143,8 @@ def chat_payload(entity: Any) -> dict[str, Any] | None:
 
 
 def folder_peer_payload(entity: Any) -> dict[str, Any] | None:
+    if isinstance(entity, types.User) and getattr(entity, "bot", False):
+        return None
     chat = chat_payload(entity)
     if chat is not None:
         return {
@@ -409,7 +427,7 @@ async def build_item(
         telegram_message["relaydesk_topic_title"] = topic_title
 
     return {
-        "source": "group",
+        "source": "user" if chat["type"] == "private" else "group",
         "outgoing": bool(message.out),
         "historical": historical,
         "edited": edited,
@@ -551,7 +569,11 @@ async def run_listener() -> None:
 
     try:
         print(f"Telegram grup akışı bağlı: {bundle['display_name']}")
-        cursor_result = await asyncio.to_thread(request_json, IMPORT_URL, internal_secret)
+        cursor_result = await asyncio.to_thread(
+            request_json,
+            f"{IMPORT_URL}?connectionId={MT_PROTO_USER_CONNECTION_ID}",
+            internal_secret,
+        )
         cursors = {
             str(chat_id): int(message_id)
             for chat_id, message_id in (cursor_result.get("cursors") or {}).items()
