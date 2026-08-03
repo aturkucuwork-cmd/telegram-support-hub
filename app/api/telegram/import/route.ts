@@ -6,10 +6,8 @@ import {
   BOT_GROUP_CONNECTION_ID,
   storeTelegramMessage,
 } from "@/lib/store-telegram";
-import {
-  telegramConfig,
-  type TelegramMessage,
-} from "@/lib/telegram";
+import { requireInternalApi } from "@/lib/internal-api";
+import { type TelegramMessage } from "@/lib/telegram";
 
 type ImportItem = {
   source: "business" | "group";
@@ -37,20 +35,9 @@ function isValidItem(value: unknown): value is ImportItem {
   );
 }
 
-function authorized(request: Request, webhookSecret: string) {
-  return (
-    request.headers.get("x-telegram-bot-api-secret-token") === webhookSecret
-  );
-}
-
 export async function GET(request: Request) {
-  const { webhookSecret } = telegramConfig();
-  if (!webhookSecret) {
-    return Response.json({ error: "Telegram henüz yapılandırılmadı." }, { status: 503 });
-  }
-  if (!authorized(request, webhookSecret)) {
-    return Response.json({ error: "Geçersiz içe aktarma imzası." }, { status: 401 });
-  }
+  const authorization = requireInternalApi(request);
+  if (authorization) return authorization;
 
   await ensureSchema();
   const rows = await getDb()
@@ -73,13 +60,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { webhookSecret } = telegramConfig();
-  if (!webhookSecret) {
-    return Response.json({ error: "Telegram henüz yapılandırılmadı." }, { status: 503 });
-  }
-  if (!authorized(request, webhookSecret)) {
-    return Response.json({ error: "Geçersiz içe aktarma imzası." }, { status: 401 });
-  }
+  const authorization = requireInternalApi(request);
+  if (authorization) return authorization;
 
   const body = (await request.json()) as { items?: unknown[] };
   if (!Array.isArray(body.items) || body.items.length < 1 || body.items.length > 250) {

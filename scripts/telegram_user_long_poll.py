@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import asyncio
-import ctypes
 import datetime
 import json
-import sys
+import os
 import time
+
+if os.name == "nt":
+    import msvcrt
+else:
+    import fcntl
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -25,13 +29,13 @@ truststore.inject_into_ssl()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = PROJECT_ROOT / ".env.local"
+LOCK_PATH = PROJECT_ROOT / ".telegram-user-long-poll.lock"
 IMPORT_URL = "http://localhost:3000/api/telegram/import"
 HEARTBEAT_URL = "http://localhost:3000/api/telegram/user-listener"
 FOLDERS_URL = "http://localhost:3000/api/telegram/folders"
 RETRY_MAX_SECONDS = 30
 INITIAL_MESSAGE_LIMIT = 100
 FOLDER_SYNC_SECONDS = 30
-MUTEX_NAME = "Local\\RelayDeskTelegramUserListener"
 
 
 def load_env() -> dict[str, str]:
@@ -43,19 +47,27 @@ def load_env() -> dict[str, str]:
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        values[key.strip()] = value.strip().strip("\"'")
+        key = key.strip()
+        value = value.strip().strip("\"'")
+        values[key] = value
+        # telegram_user_session.py reads SESSION_ENCRYPTION_KEY straight from
+        # the real process environment; mirror .env.local into it here so this
+        # also works outside systemd (which sets it via EnvironmentFile=).
+        os.environ.setdefault(key, value)
     return values
 
 
 def request_json(
     url: str,
-    secret: str,
+    internal_secret: str,
     *,
     payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     headers = {
         "Accept": "application/json",
-        "X-Telegram-Bot-Api-Secret-Token": secret,
+        "X-RelayDesk-Internal-Secret": internal_secret,
+        "X-RelayDesk-Internal-Timestamp": str(int(time.time() * 1000)),
+        "X-RelayDesk-Internal-Nonce": os.urandom(16).hex(),
     }
     data = None
     method = "GET"
@@ -79,17 +91,20 @@ def request_json(
 
 
 def acquire_single_instance() -> Any:
-    if sys.platform != "win32":
-        return object()
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
-    kernel32.CreateMutexW.restype = ctypes.c_void_p
-    handle = kernel32.CreateMutexW(None, False, MUTEX_NAME)
-    if not handle:
-        raise ctypes.WinError(ctypes.get_last_error())
-    if ctypes.get_last_error() == 183:
-        raise RuntimeError("Telegram kullanıcı dinleyicisi zaten çalışıyor.")
-    return handle
+    lock_file = open(LOCK_PATH, "w")
+    try:
+        if os.name == "nt":
+            # Windows dev/test machine: no flock, use an msvcrt byte-range lock
+            # on the same lockfile instead (production/systemd path is Linux).
+            lock_file.write("1")
+            lock_file.flush()
+            lock_file.seek(0)
+            msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError as error:
+        raise RuntimeError("Telegram kullanıcı dinleyicisi zaten çalışıyor.") from error
+    return lock_file
 
 
 def chat_payload(entity: Any) -> dict[str, Any] | None:
@@ -402,14 +417,14 @@ async def build_item(
     }
 
 
-async def post_with_retry(items: list[dict[str, Any]], secret: str) -> None:
+async def post_with_retry(items: list[dict[str, Any]], internal_secret: str) -> None:
     delay = 1
     while True:
         try:
             await asyncio.to_thread(
                 request_json,
                 IMPORT_URL,
-                secret,
+                internal_secret,
                 payload={"items": items},
             )
             return
@@ -420,12 +435,14 @@ async def post_with_retry(items: list[dict[str, Any]], secret: str) -> None:
 
 
 async def run_listener() -> None:
-    mutex = acquire_single_instance()
-    del mutex  # Windows keeps the underlying handle valid for the process lifetime.
+    # Keep a live reference for the whole process lifetime: closing this file
+    # object (e.g. via `del`) releases the flock immediately, which would
+    # silently defeat single-instance protection.
+    _listener_lock = acquire_single_instance()
     env = load_env()
-    secret = env.get("TELEGRAM_WEBHOOK_SECRET", "")
-    if not secret:
-        raise RuntimeError(".env.local içinde TELEGRAM_WEBHOOK_SECRET eksik.")
+    internal_secret = env.get("INTERNAL_API_SECRET", "")
+    if not internal_secret:
+        raise RuntimeError(".env.local içinde INTERNAL_API_SECRET eksik.")
     bundle = load_session()
     client = TelegramClient(
         StringSession(str(bundle["session"])),
@@ -433,7 +450,7 @@ async def run_listener() -> None:
         str(bundle["api_hash"]),
         device_model="RelayDesk Local Listener",
         app_version="1.0",
-        system_version="Windows",
+        system_version="Linux",
     )
     queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=5000)
     topic_cache: dict[int, dict[int, str]] = {}
@@ -447,7 +464,7 @@ async def run_listener() -> None:
                     batch.append(queue.get_nowait())
                 except asyncio.QueueEmpty:
                     break
-            await post_with_retry(batch, secret)
+            await post_with_retry(batch, internal_secret)
             for _ in batch:
                 queue.task_done()
 
@@ -462,7 +479,7 @@ async def run_listener() -> None:
                 await asyncio.to_thread(
                     request_json,
                     HEARTBEAT_URL,
-                    secret,
+                    internal_secret,
                     payload=payload,
                 )
             except RuntimeError as error:
@@ -476,7 +493,7 @@ async def run_listener() -> None:
                 result = await asyncio.to_thread(
                     request_json,
                     FOLDERS_URL,
-                    secret,
+                    internal_secret,
                     payload={
                         "telegramUserId": str(bundle["telegram_user_id"]),
                         "folders": folders,
@@ -534,7 +551,7 @@ async def run_listener() -> None:
 
     try:
         print(f"Telegram grup akışı bağlı: {bundle['display_name']}")
-        cursor_result = await asyncio.to_thread(request_json, IMPORT_URL, secret)
+        cursor_result = await asyncio.to_thread(request_json, IMPORT_URL, internal_secret)
         cursors = {
             str(chat_id): int(message_id)
             for chat_id, message_id in (cursor_result.get("cursors") or {}).items()
@@ -581,7 +598,7 @@ async def run_listener() -> None:
                     if item is not None:
                         batch.append(item)
                     if len(batch) == 100:
-                        await post_with_retry(batch, secret)
+                        await post_with_retry(batch, internal_secret)
                         imported += len(batch)
                         batch = []
             else:
@@ -596,11 +613,11 @@ async def run_listener() -> None:
                     if item is not None:
                         batch.append(item)
                     if len(batch) == 100:
-                        await post_with_retry(batch, secret)
+                        await post_with_retry(batch, internal_secret)
                         imported += len(batch)
                         batch = []
             if batch:
-                await post_with_retry(batch, secret)
+                await post_with_retry(batch, internal_secret)
                 imported += len(batch)
         print(f"Başlangıç taraması tamamlandı: {dialog_count} sohbet, {imported} mesaj.")
         print("Yeni grup ve kanal mesajları canlı dinleniyor. Bu pencereyi açık bırakın.")

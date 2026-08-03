@@ -1,5 +1,3 @@
-import { env } from "cloudflare:workers";
-
 export type TelegramUser = {
   id?: number;
   first_name?: string;
@@ -54,7 +52,7 @@ export type ParsedContent = {
 };
 
 function value(name: string): string | undefined {
-  return (env as unknown as Record<string, string | undefined>)[name];
+  return process.env[name];
 }
 
 export function telegramConfig() {

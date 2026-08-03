@@ -14,7 +14,6 @@ ExecStart=/opt/relaydesk/.venv/bin/python -u scripts/local_setup_bridge.py
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=30
-NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true
 ReadWritePaths=/var/lib/relaydesk

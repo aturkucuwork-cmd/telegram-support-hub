@@ -1,0 +1,4346 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "81d8d75a0a0c8509a73cc93297ae8e695be3abba",
+  "generatedAt": "2026-07-31T19:57:43.233Z",
+  "files": {
+    ".env.example": {
+      "filePath": ".env.example",
+      "contentHash": "da0f9fe31550d6a4cd6f4fec5da6f93f43bfd4cc688b148f143dc267f40ea618",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5,
+      "hasStructuralAnalysis": true
+    },
+    ".openai/hosting.json": {
+      "filePath": ".openai/hosting.json",
+      "contentHash": "bd33adbd14778859759428f4ccbccd29df7f5b04b1815fb80f515eab285600ef",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "app/account-ui.tsx": {
+      "filePath": "app/account-ui.tsx",
+      "contentHash": "51b31a935e95cb2d417eb2fd3e8950c46ecd0dbda3c773558963c35504b24713",
+      "functions": [
+        {
+          "name": "apiData",
+          "params": [
+            "response"
+          ],
+          "returnType": "Promise<T & { error?: string }>",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "AuthCard",
+          "params": [
+            "{\n  setupRequired,\n  onAuthenticated,\n}"
+          ],
+          "exported": true,
+          "lineCount": 64
+        },
+        {
+          "name": "TeamPanel",
+          "params": [
+            "{ actor, onClose }"
+          ],
+          "exported": true,
+          "lineCount": 102
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "FormEvent",
+            "useCallback",
+            "useEffect",
+            "useState"
+          ]
+        },
+        {
+          "source": "./types",
+          "specifiers": [
+            "Actor"
+          ]
+        }
+      ],
+      "exports": [
+        "AuthCard",
+        "TeamPanel"
+      ],
+      "totalLines": 189,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/auth/login/route.ts": {
+      "filePath": "app/api/auth/login/route.ts",
+      "contentHash": "fce11dc11e01d83c3c30de1315163324e4a25a696a1a10ae0b40e09d82e12379",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 37
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "eq"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "agents"
+          ]
+        },
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "createSession",
+            "isSameOriginRequest",
+            "sessionCookie"
+          ]
+        },
+        {
+          "source": "@/lib/password",
+          "specifiers": [
+            "verifyPassword"
+          ]
+        }
+      ],
+      "exports": [
+        "POST"
+      ],
+      "totalLines": 45,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/auth/logout/route.ts": {
+      "filePath": "app/api/auth/logout/route.ts",
+      "contentHash": "185bcfcf6fe5ef75a3f32ac1a644c99607d537104cb223e112ac5024416e6963",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "clearSessionCookie",
+            "deleteSession",
+            "isSameOriginRequest"
+          ]
+        }
+      ],
+      "exports": [
+        "POST"
+      ],
+      "totalLines": 17,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/auth/setup/route.ts": {
+      "filePath": "app/api/auth/setup/route.ts",
+      "contentHash": "c875ec5631023770eaa66d2a74e0038cf89a1cd48b75525b389d6692f42e451e",
+      "functions": [
+        {
+          "name": "needsSetup",
+          "params": [],
+          "returnType": "Promise<boolean>",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "GET",
+          "params": [],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 49
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "eq",
+            "isNotNull"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "agents"
+          ]
+        },
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "createSession",
+            "isSameOriginRequest",
+            "sessionCookie",
+            "validateAccountInput"
+          ]
+        },
+        {
+          "source": "@/lib/password",
+          "specifiers": [
+            "createPasswordHash"
+          ]
+        }
+      ],
+      "exports": [
+        "GET",
+        "POST"
+      ],
+      "totalLines": 76,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/auth/users/route.ts": {
+      "filePath": "app/api/auth/users/route.ts",
+      "contentHash": "ab8e9d8e48f81e25e3e8a9125e042fb2eb6d9a7e1fd561c9a17be8942a1a21d8",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 28
+        },
+        {
+          "name": "PATCH",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 55
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "asc",
+            "eq"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "agents",
+            "agentSessions"
+          ]
+        },
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "isSameOriginRequest",
+            "requireAdmin",
+            "validateAccountInput"
+          ]
+        },
+        {
+          "source": "@/lib/password",
+          "specifiers": [
+            "createPasswordHash"
+          ]
+        }
+      ],
+      "exports": [
+        "GET",
+        "POST",
+        "PATCH"
+      ],
+      "totalLines": 113,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/conversations/route.ts": {
+      "filePath": "app/api/conversations/route.ts",
+      "contentHash": "2bad04767d47c22766a65563d242ac800ad9bd670a58925cc8d1df04c6bcff9f",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 29
+        },
+        {
+          "name": "PATCH",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 56
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "desc",
+            "eq"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "auditLogs",
+            "conversations"
+          ]
+        },
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "requireActor"
+          ]
+        }
+      ],
+      "exports": [
+        "GET",
+        "PATCH"
+      ],
+      "totalLines": 93,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/local-setup/route.ts": {
+      "filePath": "app/api/local-setup/route.ts",
+      "contentHash": "c8139ba424556f6f7b20c4e894635c9c85a17626cb47c54bceb9e018adf157ac",
+      "functions": [
+        {
+          "name": "runtimeValue",
+          "params": [
+            "name"
+          ],
+          "returnType": "string | undefined",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 15
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "cloudflare:workers",
+          "specifiers": [
+            "env"
+          ]
+        },
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "requireAdmin"
+          ]
+        }
+      ],
+      "exports": [
+        "GET"
+      ],
+      "totalLines": 23,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/me/route.ts": {
+      "filePath": "app/api/me/route.ts",
+      "contentHash": "2ac706bfd0dd1c305846c3cbf4eb8718067141a876f99c2ca3656c4633d97e4a",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "getActor"
+          ]
+        }
+      ],
+      "exports": [
+        "GET"
+      ],
+      "totalLines": 7,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/message-logs/route.ts": {
+      "filePath": "app/api/message-logs/route.ts",
+      "contentHash": "dc1b245dfde234433efe8dea38c4d94b9c96aa07567a3908b1912bc5a839ab06",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 33
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "requireAdmin"
+          ]
+        },
+        {
+          "source": "@/lib/message-logs",
+          "specifiers": [
+            "listMessageLogs",
+            "listMessageLogUsers",
+            "MESSAGE_LOG_PAGE_SIZE",
+            "MESSAGE_LOG_RETENTION_DAYS",
+            "pruneExpiredMessageLogs"
+          ]
+        }
+      ],
+      "exports": [
+        "GET"
+      ],
+      "totalLines": 44,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/messages/route.ts": {
+      "filePath": "app/api/messages/route.ts",
+      "contentHash": "51a93b9d35ae798d3ec2d0c64fd5d808af1713a9b76a6966bbfb81d115ef2ef0",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 36
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "asc",
+            "eq"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "conversations",
+            "messages"
+          ]
+        },
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "requireActor"
+          ]
+        }
+      ],
+      "exports": [
+        "GET"
+      ],
+      "totalLines": 43,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/reply/media/route.ts": {
+      "filePath": "app/api/reply/media/route.ts",
+      "contentHash": "50c8396e8c8846a225f62ba919f41f0f2fc9205a411e6728f2b6ae222abd4411",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 102
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "eq"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "auditLogs",
+            "conversations"
+          ]
+        },
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "requireActor"
+          ]
+        },
+        {
+          "source": "@/lib/reply",
+          "specifiers": [
+            "resolveReplyParameters"
+          ]
+        },
+        {
+          "source": "@/lib/store-telegram",
+          "specifiers": [
+            "BOT_GROUP_CONNECTION_ID",
+            "storeTelegramMessage"
+          ]
+        },
+        {
+          "source": "@/lib/telegram",
+          "specifiers": [
+            "telegramMultipartApi",
+            "TelegramMessage"
+          ]
+        }
+      ],
+      "exports": [
+        "POST"
+      ],
+      "totalLines": 123,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/reply/route.ts": {
+      "filePath": "app/api/reply/route.ts",
+      "contentHash": "de0b5f126bbe509ff8ce6d1177b5c1bcf6d886c3f31010d4bb90f8ca13eb4d9b",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 77
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "eq"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "auditLogs",
+            "conversations",
+            "messageLogs"
+          ]
+        },
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "requireActor"
+          ]
+        },
+        {
+          "source": "@/lib/message-logs",
+          "specifiers": [
+            "pruneExpiredMessageLogs"
+          ]
+        },
+        {
+          "source": "@/lib/reply",
+          "specifiers": [
+            "resolveReplyParameters"
+          ]
+        },
+        {
+          "source": "@/lib/store-telegram",
+          "specifiers": [
+            "BOT_GROUP_CONNECTION_ID",
+            "storeTelegramMessage"
+          ]
+        },
+        {
+          "source": "@/lib/telegram",
+          "specifiers": [
+            "telegramApi",
+            "TelegramMessage"
+          ]
+        }
+      ],
+      "exports": [
+        "POST"
+      ],
+      "totalLines": 88,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/status/route.ts": {
+      "filePath": "app/api/status/route.ts",
+      "contentHash": "22daaaa38c961bc0b84566073aba7793792908939a318e7e675c254592e40a5e",
+      "functions": [
+        {
+          "name": "getGroupMessageAccess",
+          "params": [
+            "configured"
+          ],
+          "returnType": "Promise<GroupMessageAccess>",
+          "exported": false,
+          "lineCount": 17
+        },
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 45
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "desc"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "telegramConnections",
+            "telegramUserListeners"
+          ]
+        },
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "requireActor"
+          ]
+        },
+        {
+          "source": "@/lib/telegram",
+          "specifiers": [
+            "telegramApi",
+            "telegramConfig",
+            "TelegramUser"
+          ]
+        }
+      ],
+      "exports": [
+        "GET"
+      ],
+      "totalLines": 81,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/telegram/configure/route.ts": {
+      "filePath": "app/api/telegram/configure/route.ts",
+      "contentHash": "37e9831684b8d214f7349d334165a5f1a269a797fa8a90e5a5e8308970dbcfc1",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 31
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "requireActor"
+          ]
+        },
+        {
+          "source": "@/lib/telegram",
+          "specifiers": [
+            "telegramApi",
+            "telegramConfig"
+          ]
+        }
+      ],
+      "exports": [
+        "POST"
+      ],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/telegram/file/route.ts": {
+      "filePath": "app/api/telegram/file/route.ts",
+      "contentHash": "5842500afb0573cf4a0a9230fe2fceeb794ff9b6f1176216033e6377b250f671",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 31
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "requireActor"
+          ]
+        },
+        {
+          "source": "@/lib/telegram",
+          "specifiers": [
+            "telegramApi",
+            "telegramConfig"
+          ]
+        }
+      ],
+      "exports": [
+        "GET"
+      ],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/telegram/folders/route.ts": {
+      "filePath": "app/api/telegram/folders/route.ts",
+      "contentHash": "ba802d739c2731854b26f5640035220ad3d64dfc6414f2e45e235dd11efb1d86",
+      "functions": [
+        {
+          "name": "validPeer",
+          "params": [
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "validFolder",
+          "params": [
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 32
+        },
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 103
+        },
+        {
+          "name": "PATCH",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 67
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "and",
+            "asc",
+            "eq",
+            "inArray",
+            "notInArray"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "agents",
+            "auditLogs",
+            "telegramFolderMembers",
+            "telegramFolders"
+          ]
+        },
+        {
+          "source": "@/lib/auth",
+          "specifiers": [
+            "isSameOriginRequest",
+            "requireAdmin"
+          ]
+        },
+        {
+          "source": "@/lib/folder-assignments",
+          "specifiers": [
+            "recalculateFolderAssignments"
+          ]
+        },
+        {
+          "source": "@/lib/telegram",
+          "specifiers": [
+            "telegramConfig"
+          ]
+        }
+      ],
+      "exports": [
+        "GET",
+        "POST",
+        "PATCH"
+      ],
+      "totalLines": 271,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/telegram/import/route.ts": {
+      "filePath": "app/api/telegram/import/route.ts",
+      "contentHash": "fc3a319ae7f02283ba5a187c2ab7026443a823f62cee752077e95ff964b689b8",
+      "functions": [
+        {
+          "name": "isValidItem",
+          "params": [
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 17
+        },
+        {
+          "name": "authorized",
+          "params": [
+            "request",
+            "webhookSecret"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 28
+        },
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 34
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "conversations",
+            "messages"
+          ]
+        },
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "eq",
+            "sql"
+          ]
+        },
+        {
+          "source": "@/lib/store-telegram",
+          "specifiers": [
+            "BOT_GROUP_CONNECTION_ID",
+            "storeTelegramMessage"
+          ]
+        },
+        {
+          "source": "@/lib/telegram",
+          "specifiers": [
+            "telegramConfig",
+            "TelegramMessage"
+          ]
+        }
+      ],
+      "exports": [
+        "GET",
+        "POST"
+      ],
+      "totalLines": 109,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/telegram/user-listener/route.ts": {
+      "filePath": "app/api/telegram/user-listener/route.ts",
+      "contentHash": "0ef9555852a227d259566c6c8828a55a9522767aa0e3441f7ee723416d52d7d7",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 52
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "eq"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "telegramUserListeners"
+          ]
+        },
+        {
+          "source": "@/lib/telegram",
+          "specifiers": [
+            "telegramConfig"
+          ]
+        }
+      ],
+      "exports": [
+        "POST"
+      ],
+      "totalLines": 65,
+      "hasStructuralAnalysis": true
+    },
+    "app/api/telegram/webhook/route.ts": {
+      "filePath": "app/api/telegram/webhook/route.ts",
+      "contentHash": "06be449e22c22deabdc9d8e5912efb0d95ee7cf934d2b866c471e9370e984086",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 118
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "eq"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "telegramConnections",
+            "webhookUpdates"
+          ]
+        },
+        {
+          "source": "@/lib/store-telegram",
+          "specifiers": [
+            "BOT_GROUP_CONNECTION_ID",
+            "markDeletedMessages",
+            "storeTelegramMessage"
+          ]
+        },
+        {
+          "source": "@/lib/telegram",
+          "specifiers": [
+            "personName",
+            "telegramConfig",
+            "TelegramChat",
+            "TelegramMessage",
+            "TelegramUser"
+          ]
+        }
+      ],
+      "exports": [
+        "POST"
+      ],
+      "totalLines": 157,
+      "hasStructuralAnalysis": true
+    },
+    "app/chatgpt-auth.ts": {
+      "filePath": "app/chatgpt-auth.ts",
+      "contentHash": "1407f614cc83d7049fdb08cd713d2516866ba58e24e820f7f4fd9d718b9d3007",
+      "functions": [
+        {
+          "name": "getChatGPTUser",
+          "params": [],
+          "returnType": "Promise<ChatGPTUser | null>",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "requireChatGPTUser",
+          "params": [
+            "returnTo"
+          ],
+          "returnType": "Promise<ChatGPTUser>",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "chatGPTSignInPath",
+          "params": [
+            "returnTo"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "chatGPTSignOutPath",
+          "params": [
+            "returnTo"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "safeRelativeReturnPath",
+          "params": [
+            "value"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "isReservedAuthPath",
+          "params": [
+            "pathname"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "safeDecodeURIComponent",
+          "params": [
+            "value"
+          ],
+          "returnType": "string | null",
+          "exported": false,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/headers",
+          "specifiers": [
+            "headers"
+          ]
+        },
+        {
+          "source": "next/navigation",
+          "specifiers": [
+            "redirect"
+          ]
+        }
+      ],
+      "exports": [
+        "getChatGPTUser",
+        "requireChatGPTUser",
+        "chatGPTSignInPath",
+        "chatGPTSignOutPath"
+      ],
+      "totalLines": 87,
+      "hasStructuralAnalysis": true
+    },
+    "app/folder-rules-panel.tsx": {
+      "filePath": "app/folder-rules-panel.tsx",
+      "contentHash": "8459d3764dd6c1875fc1fdad3b124c6fdc0e8e98e1ce1e4e9172e27034993943",
+      "functions": [
+        {
+          "name": "syncLabel",
+          "params": [
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "peerMark",
+          "params": [
+            "type"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "FolderRulesPanel",
+          "params": [
+            "{ onClose }"
+          ],
+          "exported": true,
+          "lineCount": 156
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useCallback",
+            "useEffect",
+            "useMemo",
+            "useState"
+          ]
+        },
+        {
+          "source": "./types",
+          "specifiers": [
+            "TelegramFolder",
+            "TelegramFolderUser"
+          ]
+        }
+      ],
+      "exports": [
+        "FolderRulesPanel"
+      ],
+      "totalLines": 184,
+      "hasStructuralAnalysis": true
+    },
+    "app/globals.css": {
+      "filePath": "app/globals.css",
+      "contentHash": "7b4b3c2f0aa933cb18e63f6210689505946761a5e47e7bb62b6c13b8a56c40e0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 516,
+      "hasStructuralAnalysis": false
+    },
+    "app/layout.tsx": {
+      "filePath": "app/layout.tsx",
+      "contentHash": "d42a003d95723d4bb0cb14dfee192e1ff8578e0a0f27f4126d09fc40f3182d45",
+      "functions": [
+        {
+          "name": "generateMetadata",
+          "params": [],
+          "returnType": "Promise<Metadata>",
+          "exported": true,
+          "lineCount": 34
+        },
+        {
+          "name": "RootLayout",
+          "params": [
+            "{\n  children,\n}"
+          ],
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next",
+          "specifiers": [
+            "Metadata"
+          ]
+        },
+        {
+          "source": "next/headers",
+          "specifiers": [
+            "headers"
+          ]
+        },
+        {
+          "source": "next/font/google",
+          "specifiers": [
+            "Geist",
+            "Geist_Mono"
+          ]
+        },
+        {
+          "source": "./globals.css",
+          "specifiers": []
+        }
+      ],
+      "exports": [
+        "generateMetadata",
+        "RootLayout"
+      ],
+      "totalLines": 64,
+      "hasStructuralAnalysis": true
+    },
+    "app/message-log-panel.tsx": {
+      "filePath": "app/message-log-panel.tsx",
+      "contentHash": "ac63616bf3a305e9dcb40fc63d9aa9877f8d61a97cd75fa67aaffbf8970f88be",
+      "functions": [
+        {
+          "name": "logDate",
+          "params": [
+            "value"
+          ],
+          "returnType": "Date",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "localDayKey",
+          "params": [
+            "date"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "dayLabel",
+          "params": [
+            "date"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "formatTime",
+          "params": [
+            "value"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "initials",
+          "params": [
+            "value"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "MessageLogPanel",
+          "params": [
+            "{ onClose }"
+          ],
+          "exported": true,
+          "lineCount": 238
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "FormEvent",
+            "useCallback",
+            "useEffect",
+            "useMemo",
+            "useState"
+          ]
+        },
+        {
+          "source": "./types",
+          "specifiers": [
+            "MessageLog",
+            "MessageLogUser"
+          ]
+        }
+      ],
+      "exports": [
+        "MessageLogPanel"
+      ],
+      "totalLines": 307,
+      "hasStructuralAnalysis": true
+    },
+    "app/page.tsx": {
+      "filePath": "app/page.tsx",
+      "contentHash": "657353672df015a4eaa4a5c95485f1f6d1b5b8368be3daf9521dd6c30141a82f",
+      "functions": [
+        {
+          "name": "Home",
+          "params": [],
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next",
+          "specifiers": [
+            "Metadata"
+          ]
+        },
+        {
+          "source": "./support-desk",
+          "specifiers": [
+            "SupportDesk"
+          ]
+        }
+      ],
+      "exports": [
+        "metadata",
+        "Home"
+      ],
+      "totalLines": 12,
+      "hasStructuralAnalysis": true
+    },
+    "app/setup-wizard.tsx": {
+      "filePath": "app/setup-wizard.tsx",
+      "contentHash": "dab655b9ecdda14cda279706290f27c26cb957ee8ca97f1a466d80ce9bd21bbc",
+      "functions": [
+        {
+          "name": "responseData",
+          "params": [
+            "response"
+          ],
+          "returnType": "Promise<T & { error?: string; code?: string }>",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "SetupWizard",
+          "params": [
+            "{\n  status,\n  onRefresh,\n  onClose,\n}"
+          ],
+          "exported": true,
+          "lineCount": 301
+        },
+        {
+          "name": "StepHeading",
+          "params": [
+            "{ mark, title, text, done }"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "ConnectedCard",
+          "params": [
+            "{ title, detail }"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "WizardStepOne",
+          "params": [
+            "{ status, onNext }"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "WizardFinal",
+          "params": [
+            "{ status, businessConnected, groupConnected, onRefresh, onClose }"
+          ],
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "FormEvent",
+            "useCallback",
+            "useEffect",
+            "useMemo",
+            "useState"
+          ]
+        },
+        {
+          "source": "./types",
+          "specifiers": [
+            "SystemStatus"
+          ]
+        }
+      ],
+      "exports": [
+        "SetupWizard"
+      ],
+      "totalLines": 362,
+      "hasStructuralAnalysis": true
+    },
+    "app/support-desk.tsx": {
+      "filePath": "app/support-desk.tsx",
+      "contentHash": "b592ebc29ba403791a298decc392a4b46874bfca4f442825bd0cc5408491025b",
+      "functions": [
+        {
+          "name": "formatTime",
+          "params": [
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "initials",
+          "params": [
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "attachmentLabel",
+          "params": [
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "messageSummary",
+          "params": [
+            "message"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "messageSenderLabel",
+          "params": [
+            "message"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "readResponseData",
+          "params": [
+            "response"
+          ],
+          "returnType": "Promise<{ error?: string }>",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "SupportDesk",
+          "params": [],
+          "exported": true,
+          "lineCount": 440
+        },
+        {
+          "name": "MessageContent",
+          "params": [
+            "{ message }"
+          ],
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "SetupPanel",
+          "params": [
+            "{ status, onOpen }"
+          ],
+          "exported": false,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "ChangeEvent",
+            "FormEvent",
+            "useCallback",
+            "useEffect",
+            "useMemo",
+            "useRef",
+            "useState"
+          ]
+        },
+        {
+          "source": "next/image",
+          "specifiers": [
+            "Image"
+          ]
+        },
+        {
+          "source": "./types",
+          "specifiers": [
+            "Conversation",
+            "Message",
+            "SystemStatus"
+          ]
+        },
+        {
+          "source": "./account-ui",
+          "specifiers": [
+            "AuthCard",
+            "TeamPanel"
+          ]
+        },
+        {
+          "source": "./message-log-panel",
+          "specifiers": [
+            "MessageLogPanel"
+          ]
+        },
+        {
+          "source": "./setup-wizard",
+          "specifiers": [
+            "SetupWizard"
+          ]
+        },
+        {
+          "source": "./folder-rules-panel",
+          "specifiers": [
+            "FolderRulesPanel"
+          ]
+        }
+      ],
+      "exports": [
+        "SupportDesk"
+      ],
+      "totalLines": 556,
+      "hasStructuralAnalysis": true
+    },
+    "app/types.ts": {
+      "filePath": "app/types.ts",
+      "contentHash": "072452272ba2e8bfea5ccdcfd3ef2255d48ee7abcc003baea5015ebb9b732f95",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 112,
+      "hasStructuralAnalysis": true
+    },
+    "build/local-media-upload-vite-plugin.ts": {
+      "filePath": "build/local-media-upload-vite-plugin.ts",
+      "contentHash": "ccd2b7c22b7c8de1d66546846f021601d1d4a719894573380635c5e229233c89",
+      "functions": [
+        {
+          "name": "sendJson",
+          "params": [
+            "response",
+            "status",
+            "payload"
+          ],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "readRequestBody",
+          "params": [
+            "request"
+          ],
+          "returnType": "Promise<Uint8Array>",
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "isSameOrigin",
+          "params": [
+            "origin",
+            "host"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "formString",
+          "params": [
+            "form",
+            "name"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "localMediaUpload",
+          "params": [],
+          "returnType": "Plugin",
+          "exported": true,
+          "lineCount": 189
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:http",
+          "specifiers": [
+            "IncomingMessage",
+            "ServerResponse"
+          ]
+        },
+        {
+          "source": "vite",
+          "specifiers": [
+            "Plugin"
+          ]
+        },
+        {
+          "source": "vite",
+          "specifiers": [
+            "loadEnv"
+          ]
+        }
+      ],
+      "exports": [
+        "localMediaUpload"
+      ],
+      "totalLines": 239,
+      "hasStructuralAnalysis": true
+    },
+    "build/sites-vite-plugin.ts": {
+      "filePath": "build/sites-vite-plugin.ts",
+      "contentHash": "abd6bc3a592961e978ab72fceb8ee7647824d9a2321ee5b5777b2a05d69526cc",
+      "functions": [
+        {
+          "name": "exists",
+          "params": [
+            "path"
+          ],
+          "returnType": "Promise<boolean>",
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "sites",
+          "params": [],
+          "returnType": "Plugin",
+          "exported": true,
+          "lineCount": 28
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:fs/promises",
+          "specifiers": [
+            "access",
+            "cp",
+            "mkdir",
+            "rm"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "resolve"
+          ]
+        },
+        {
+          "source": "vite",
+          "specifiers": [
+            "Plugin"
+          ]
+        }
+      ],
+      "exports": [
+        "sites"
+      ],
+      "totalLines": 46,
+      "hasStructuralAnalysis": true
+    },
+    "cloudflare-env.d.ts": {
+      "filePath": "cloudflare-env.d.ts",
+      "contentHash": "b0d1f73b02daa5c34379b4a2db34a70c2ea3c1767ef719ec7af119a6f4feda58",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "db/ensure.ts": {
+      "filePath": "db/ensure.ts",
+      "contentHash": "a62ddcfc8ca0b006c22c9bce944b6acf2dccf86ead3a9bf0a26028f4922d3f30",
+      "functions": [
+        {
+          "name": "ensureSchema",
+          "params": [],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 124
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "cloudflare:workers",
+          "specifiers": [
+            "env"
+          ]
+        }
+      ],
+      "exports": [
+        "ensureSchema"
+      ],
+      "totalLines": 278,
+      "hasStructuralAnalysis": true
+    },
+    "db/index.ts": {
+      "filePath": "db/index.ts",
+      "contentHash": "effa59e46bcbb42dfb7b46911e809a1de0f2c37df1fd935e3dca89023eaf97e4",
+      "functions": [
+        {
+          "name": "getDb",
+          "params": [],
+          "exported": true,
+          "lineCount": 9
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "cloudflare:workers",
+          "specifiers": [
+            "env"
+          ]
+        },
+        {
+          "source": "drizzle-orm/d1",
+          "specifiers": [
+            "drizzle"
+          ]
+        },
+        {
+          "source": "./schema",
+          "specifiers": [
+            "* as schema"
+          ]
+        }
+      ],
+      "exports": [
+        "getDb"
+      ],
+      "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "db/schema.ts": {
+      "filePath": "db/schema.ts",
+      "contentHash": "cbf40bcc16a46fd810e6f50457e97e0f24b7cff197ba98679bb28bcd8a461f2b",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "sql"
+          ]
+        },
+        {
+          "source": "drizzle-orm/sqlite-core",
+          "specifiers": [
+            "index",
+            "integer",
+            "sqliteTable",
+            "text",
+            "uniqueIndex"
+          ]
+        }
+      ],
+      "exports": [
+        "agents",
+        "agentSessions",
+        "telegramConnections",
+        "telegramUserListeners",
+        "telegramFolders",
+        "telegramFolderMembers",
+        "conversations",
+        "messages",
+        "webhookUpdates",
+        "auditLogs",
+        "messageLogs"
+      ],
+      "totalLines": 203,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle.config.ts": {
+      "filePath": "drizzle.config.ts",
+      "contentHash": "73d0807c58e541dc3eaf175909fb5acc966faed61f74ff659d9d55027bf3e25b",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-kit",
+          "specifiers": [
+            "defineConfig"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/0000_jittery_lethal_legion.sql": {
+      "filePath": "drizzle/0000_jittery_lethal_legion.sql",
+      "contentHash": "c79a014cb74e9cdc8ba860cc268f9f31aa4b214ee6ef92e6925fd45d02ee28a3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 77,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/0001_young_cerise.sql": {
+      "filePath": "drizzle/0001_young_cerise.sql",
+      "contentHash": "873e47fea0911e7ebb3ce487fa177847a4c5df2d13064cd408c364d4314ea365",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/0002_abnormal_silver_centurion.sql": {
+      "filePath": "drizzle/0002_abnormal_silver_centurion.sql",
+      "contentHash": "9907ac41a03b1e97929ffd8c933b83021f9a4287bef78aa7cd0a43ad09cc2bda",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/0003_romantic_stardust.sql": {
+      "filePath": "drizzle/0003_romantic_stardust.sql",
+      "contentHash": "8a5ace574024766155b6382fbbdaccf20e6e1e97c2686e1f320f05c9df68d5f7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/0004_lethal_the_liberteens.sql": {
+      "filePath": "drizzle/0004_lethal_the_liberteens.sql",
+      "contentHash": "effc7de248c4199fd81f22ac9750d86892cff754d34ae4f9a835245a0a9b8de2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/0005_tough_gressill.sql": {
+      "filePath": "drizzle/0005_tough_gressill.sql",
+      "contentHash": "52670cc4073f4a85465ec7fa40befbf6057f8584dc3de3bc188d6c9935ec15b5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/meta/_journal.json": {
+      "filePath": "drizzle/meta/_journal.json",
+      "contentHash": "f699e6c8c3c7be94933395bba4ae21c99a5422e187b649f88299a712e89b2267",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/meta/0000_snapshot.json": {
+      "filePath": "drizzle/meta/0000_snapshot.json",
+      "contentHash": "fe1e75d6dd5ebfd83826c5ae89243d783a07caff3eed2131a5212d205f25b70d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 520,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/meta/0001_snapshot.json": {
+      "filePath": "drizzle/meta/0001_snapshot.json",
+      "contentHash": "c29e2eb52e9ea9b4db5c008e90a773c3b631460cde6945b0baf9d5d75fe34753",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 605,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/meta/0002_snapshot.json": {
+      "filePath": "drizzle/meta/0002_snapshot.json",
+      "contentHash": "970a9edaab3fc0876561d3e8f0ef64b7ba9eb2482797fb075cb366738972e506",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 612,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/meta/0003_snapshot.json": {
+      "filePath": "drizzle/meta/0003_snapshot.json",
+      "contentHash": "d8e055e81078e0276a4ddd41c11ae7d4c4462377815c00d2ba60b22cb037645b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 702,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/meta/0004_snapshot.json": {
+      "filePath": "drizzle/meta/0004_snapshot.json",
+      "contentHash": "0f9781a5a2376128c895758d59efe28c41994711acb2fca0bafccf0f65303224",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 771,
+      "hasStructuralAnalysis": true
+    },
+    "drizzle/meta/0005_snapshot.json": {
+      "filePath": "drizzle/meta/0005_snapshot.json",
+      "contentHash": "60794943ecea5f7308b851e9b26927ee48ca7ce4f590c0a2dd516a954361c394",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 967,
+      "hasStructuralAnalysis": true
+    },
+    "eslint.config.mjs": {
+      "filePath": "eslint.config.mjs",
+      "contentHash": "275a07c13fc7c83a652efcfa9fb6a207c451a2f5088e6793415ce44281285720",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "eslint/config",
+          "specifiers": [
+            "defineConfig",
+            "globalIgnores"
+          ]
+        },
+        {
+          "source": "eslint-config-next/core-web-vitals",
+          "specifiers": [
+            "nextVitals"
+          ]
+        },
+        {
+          "source": "eslint-config-next/typescript",
+          "specifiers": [
+            "nextTs"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 19,
+      "hasStructuralAnalysis": true
+    },
+    "examples/d1/app/api/notes/route.ts": {
+      "filePath": "examples/d1/app/api/notes/route.ts",
+      "contentHash": "b0b134b9b0b4a9f5947abbd13fd4425b88b59c64f91db1aacb0cecbc16c38f45",
+      "functions": [
+        {
+          "name": "toRouteErrorMessage",
+          "params": [
+            "error"
+          ],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "GET",
+          "params": [],
+          "exported": true,
+          "lineCount": 17
+        },
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 23
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "desc"
+          ]
+        },
+        {
+          "source": "../../../../../db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "../../../db/schema",
+          "specifiers": [
+            "notes"
+          ]
+        }
+      ],
+      "exports": [
+        "GET",
+        "POST"
+      ],
+      "totalLines": 59,
+      "hasStructuralAnalysis": true
+    },
+    "examples/d1/db/schema.ts": {
+      "filePath": "examples/d1/db/schema.ts",
+      "contentHash": "1acd70317bcaf22cb140436fb47754c2144e7c2adfc59a3f427ecb1d816fa0f3",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "sql"
+          ]
+        },
+        {
+          "source": "drizzle-orm/sqlite-core",
+          "specifiers": [
+            "integer",
+            "sqliteTable",
+            "text"
+          ]
+        }
+      ],
+      "exports": [
+        "notes"
+      ],
+      "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
+    "lib/auth.ts": {
+      "filePath": "lib/auth.ts",
+      "contentHash": "08fbae142e570540fd9ca35f6af105c8ac50ac80aa8df372631377e89c8302d5",
+      "functions": [
+        {
+          "name": "safeDecode",
+          "params": [
+            "value"
+          ],
+          "returnType": "string | null",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "runtimeValue",
+          "params": [
+            "name"
+          ],
+          "returnType": "string | undefined",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "cookieValue",
+          "params": [
+            "request",
+            "name"
+          ],
+          "returnType": "string | null",
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "isSameOriginRequest",
+          "params": [
+            "request"
+          ],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "validateAccountInput",
+          "params": [
+            "input"
+          ],
+          "returnType": "{ email: string; displayName: string; password: string } | Response",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "actorFromSession",
+          "params": [
+            "request"
+          ],
+          "returnType": "Promise<Actor | null>",
+          "exported": false,
+          "lineCount": 37
+        },
+        {
+          "name": "actorFromWorkspace",
+          "params": [
+            "request"
+          ],
+          "returnType": "Promise<Actor | null>",
+          "exported": false,
+          "lineCount": 33
+        },
+        {
+          "name": "getActor",
+          "params": [
+            "request"
+          ],
+          "returnType": "Promise<Actor | null>",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "requireActor",
+          "params": [
+            "request"
+          ],
+          "returnType": "Promise<Actor | Response>",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "requireAdmin",
+          "params": [
+            "request"
+          ],
+          "returnType": "Promise<Actor | Response>",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "createSession",
+          "params": [
+            "agentId"
+          ],
+          "returnType": "Promise<string>",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "deleteSession",
+          "params": [
+            "request"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "sessionCookie",
+          "params": [
+            "request",
+            "token"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "clearSessionCookie",
+          "params": [
+            "request"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "cloudflare:workers",
+          "specifiers": [
+            "env"
+          ]
+        },
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "and",
+            "eq",
+            "gt",
+            "lt"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/ensure",
+          "specifiers": [
+            "ensureSchema"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "agents",
+            "agentSessions"
+          ]
+        },
+        {
+          "source": "@/lib/password",
+          "specifiers": [
+            "hashSessionToken",
+            "randomSessionToken"
+          ]
+        }
+      ],
+      "exports": [
+        "SESSION_COOKIE",
+        "isSameOriginRequest",
+        "validateAccountInput",
+        "getActor",
+        "requireActor",
+        "requireAdmin",
+        "createSession",
+        "deleteSession",
+        "sessionCookie",
+        "clearSessionCookie"
+      ],
+      "totalLines": 204,
+      "hasStructuralAnalysis": true
+    },
+    "lib/folder-assignments.ts": {
+      "filePath": "lib/folder-assignments.ts",
+      "contentHash": "3a213ff321993977fd0c0ed0d0eace9fabae28a2b5565b47af533337230825f3",
+      "functions": [
+        {
+          "name": "findFolderAssignment",
+          "params": [
+            "telegramChatId"
+          ],
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "recalculateFolderAssignments",
+          "params": [],
+          "returnType": "Promise<number>",
+          "exported": true,
+          "lineCount": 67
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "and",
+            "asc",
+            "desc",
+            "eq",
+            "inArray",
+            "isNotNull",
+            "isNull",
+            "or",
+            "sql"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "agents",
+            "conversations",
+            "telegramFolderMembers",
+            "telegramFolders"
+          ]
+        }
+      ],
+      "exports": [
+        "findFolderAssignment",
+        "recalculateFolderAssignments"
+      ],
+      "totalLines": 121,
+      "hasStructuralAnalysis": true
+    },
+    "lib/message-logs.ts": {
+      "filePath": "lib/message-logs.ts",
+      "contentHash": "5f68a2c319b26b9bfee6014bf1c69213b174592c94a208f3aade51e2a6f8363e",
+      "functions": [
+        {
+          "name": "pruneExpiredMessageLogs",
+          "params": [],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "listMessageLogs",
+          "params": [
+            "options"
+          ],
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "listMessageLogUsers",
+          "params": [],
+          "exported": true,
+          "lineCount": 33
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "and",
+            "asc",
+            "count",
+            "desc",
+            "eq",
+            "gte",
+            "like",
+            "lt",
+            "max",
+            "or",
+            "sql"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "agents",
+            "messageLogs"
+          ]
+        }
+      ],
+      "exports": [
+        "MESSAGE_LOG_RETENTION_DAYS",
+        "MESSAGE_LOG_PAGE_SIZE",
+        "pruneExpiredMessageLogs",
+        "listMessageLogs",
+        "listMessageLogUsers"
+      ],
+      "totalLines": 94,
+      "hasStructuralAnalysis": true
+    },
+    "lib/password.ts": {
+      "filePath": "lib/password.ts",
+      "contentHash": "8844be3614e0838d11ec93d9fc90d935844b244ef28eeb1ff39f69c6f5627070",
+      "functions": [
+        {
+          "name": "toBase64Url",
+          "params": [
+            "bytes"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "fromBase64Url",
+          "params": [
+            "value"
+          ],
+          "returnType": "Uint8Array",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "derive",
+          "params": [
+            "password",
+            "salt"
+          ],
+          "returnType": "Promise<Uint8Array>",
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "createPasswordHash",
+          "params": [
+            "password"
+          ],
+          "returnType": "Promise<{\n  hash: string;\n  salt: string;\n}>",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "verifyPassword",
+          "params": [
+            "password",
+            "expectedHash",
+            "encodedSalt"
+          ],
+          "returnType": "Promise<boolean>",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "hashSessionToken",
+          "params": [
+            "token"
+          ],
+          "returnType": "Promise<string>",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "randomSessionToken",
+          "params": [],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "createPasswordHash",
+        "verifyPassword",
+        "hashSessionToken",
+        "randomSessionToken"
+      ],
+      "totalLines": 74,
+      "hasStructuralAnalysis": true
+    },
+    "lib/reply.ts": {
+      "filePath": "lib/reply.ts",
+      "contentHash": "6ef0eee39ee99b84bce2954945a4b627f384813ebd815c924d5d9251cebf3c56",
+      "functions": [
+        {
+          "name": "resolveReplyParameters",
+          "params": [
+            "conversationId",
+            "value"
+          ],
+          "returnType": "Promise<TelegramReplyParameters | null | Response>",
+          "exported": true,
+          "lineCount": 27
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "and",
+            "eq"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "messages"
+          ]
+        }
+      ],
+      "exports": [
+        "resolveReplyParameters"
+      ],
+      "totalLines": 34,
+      "hasStructuralAnalysis": true
+    },
+    "lib/store-telegram.ts": {
+      "filePath": "lib/store-telegram.ts",
+      "contentHash": "816d515546320d5566b435c031454b29a1c039419129cd09c6925ab93feb79b3",
+      "functions": [
+        {
+          "name": "storeTelegramMessage",
+          "params": [
+            "options"
+          ],
+          "exported": true,
+          "lineCount": 154
+        },
+        {
+          "name": "markDeletedMessages",
+          "params": [
+            "options"
+          ],
+          "exported": true,
+          "lineCount": 30
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "drizzle-orm",
+          "specifiers": [
+            "and",
+            "eq",
+            "sql"
+          ]
+        },
+        {
+          "source": "@/db",
+          "specifiers": [
+            "getDb"
+          ]
+        },
+        {
+          "source": "@/db/schema",
+          "specifiers": [
+            "conversations",
+            "messages",
+            "telegramConnections"
+          ]
+        },
+        {
+          "source": "@/lib/telegram",
+          "specifiers": [
+            "chatTitle",
+            "parseContent",
+            "personName",
+            "TelegramMessage"
+          ]
+        },
+        {
+          "source": "@/lib/folder-assignments",
+          "specifiers": [
+            "findFolderAssignment"
+          ]
+        }
+      ],
+      "exports": [
+        "BOT_GROUP_CONNECTION_ID",
+        "storeTelegramMessage",
+        "markDeletedMessages"
+      ],
+      "totalLines": 203,
+      "hasStructuralAnalysis": true
+    },
+    "lib/telegram.ts": {
+      "filePath": "lib/telegram.ts",
+      "contentHash": "9838805f6628f9c01f4c2b6245c676c4c6b499df83df6803460cfae7cd57c721",
+      "functions": [
+        {
+          "name": "value",
+          "params": [
+            "name"
+          ],
+          "returnType": "string | undefined",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "telegramConfig",
+          "params": [],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "personName",
+          "params": [
+            "user"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "chatTitle",
+          "params": [
+            "chat"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "parseContent",
+          "params": [
+            "message"
+          ],
+          "returnType": "ParsedContent",
+          "exported": true,
+          "lineCount": 98
+        },
+        {
+          "name": "telegramApi",
+          "params": [
+            "method",
+            "payload",
+            "options"
+          ],
+          "returnType": "Promise<T>",
+          "exported": true,
+          "lineCount": 26
+        },
+        {
+          "name": "telegramMultipartApi",
+          "params": [
+            "method",
+            "form"
+          ],
+          "returnType": "Promise<T>",
+          "exported": true,
+          "lineCount": 23
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "cloudflare:workers",
+          "specifiers": [
+            "env"
+          ]
+        }
+      ],
+      "exports": [
+        "telegramConfig",
+        "personName",
+        "chatTitle",
+        "parseContent",
+        "telegramApi",
+        "telegramMultipartApi"
+      ],
+      "totalLines": 234,
+      "hasStructuralAnalysis": true
+    },
+    "next.config.ts": {
+      "filePath": "next.config.ts",
+      "contentHash": "a972c4f0ffa6dd714e7909b02d1ac19d2f2fe3d01f191efd2c5054bd6f142ec1",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next",
+          "specifiers": [
+            "NextConfig"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "package.json": {
+      "filePath": "package.json",
+      "contentHash": "7931532dd00aab81317443749a8cc910ecd2bd26d63a5f0c0dfef0d0c1c16920",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 43,
+      "hasStructuralAnalysis": true
+    },
+    "postcss.config.mjs": {
+      "filePath": "postcss.config.mjs",
+      "contentHash": "7b299d3d3b16699ddda397c0b2373b3af4f25f8fc9ccc9b3d9e64ef083bc1c21",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "README.md": {
+      "filePath": "README.md",
+      "contentHash": "23f7df9107d4d7b0027824a51858963cb74d4fb8659cee2a6475c906c2098821",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 140,
+      "hasStructuralAnalysis": true
+    },
+    "requirements-connect.txt": {
+      "filePath": "requirements-connect.txt",
+      "contentHash": "beb914c87eae1a79660e04ee4651de2760fa97610693c194bf5e4f832892c17c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/configure_telegram_user_listener.py": {
+      "filePath": "scripts/configure_telegram_user_listener.py",
+      "contentHash": "716ed67e32322c9362ba30f7aba76103dc60e5eab01e0c3b038105a25d9732cf",
+      "functions": [
+        {
+          "name": "ask_api_id",
+          "params": [],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "ask_api_hash",
+          "params": [],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "ask_phone",
+          "params": [],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "configure",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 53
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "asyncio",
+          "specifiers": [
+            "asyncio"
+          ]
+        },
+        {
+          "source": "getpass",
+          "specifiers": [
+            "getpass"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime",
+            "timezone"
+          ]
+        },
+        {
+          "source": "truststore",
+          "specifiers": [
+            "truststore"
+          ]
+        },
+        {
+          "source": "telethon",
+          "specifiers": [
+            "TelegramClient",
+            "errors"
+          ]
+        },
+        {
+          "source": "telethon.sessions",
+          "specifiers": [
+            "StringSession"
+          ]
+        },
+        {
+          "source": "telegram_user_session",
+          "specifiers": [
+            "save_session"
+          ]
+        }
+      ],
+      "exports": [
+        "ask_api_id",
+        "ask_api_hash",
+        "ask_phone",
+        "configure"
+      ],
+      "totalLines": 108,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/configure-local-telegram.ps1": {
+      "filePath": "scripts/configure-local-telegram.ps1",
+      "contentHash": "198218ea0bf3d5b2899ddd20388126a007f0a0f46fc9288a2b1dd3f5010aa3b0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 74,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/configure-telegram-user-listener.ps1": {
+      "filePath": "scripts/configure-telegram-user-listener.ps1",
+      "contentHash": "d512429ff999385915ffac03c02fd4e3e99772911ce6ab3cb9dbbdf1d8690862",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 65,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/connect_telegram_business.py": {
+      "filePath": "scripts/connect_telegram_business.py",
+      "contentHash": "1f1b6481de9e487fefb99f37b816113d53016f6be1320f5add26b9fb95d9249c",
+      "functions": [
+        {
+          "name": "ask_api_id",
+          "params": [],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "ask_api_hash",
+          "params": [],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "ask_phone",
+          "params": [],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "ask_bot_username",
+          "params": [],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "authorize",
+          "params": [
+            "client",
+            "phone"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "connect_bot",
+          "params": [],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 109
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "asyncio",
+          "specifiers": [
+            "asyncio"
+          ]
+        },
+        {
+          "source": "getpass",
+          "specifiers": [
+            "getpass"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "telethon",
+          "specifiers": [
+            "TelegramClient",
+            "errors",
+            "utils"
+          ]
+        },
+        {
+          "source": "telethon.sessions",
+          "specifiers": [
+            "MemorySession"
+          ]
+        },
+        {
+          "source": "telethon.tl.functions.account",
+          "specifiers": [
+            "GetConnectedBotsRequest",
+            "UpdateConnectedBotRequest"
+          ]
+        },
+        {
+          "source": "telethon.tl.types",
+          "specifiers": [
+            "BusinessBotRights",
+            "InputBusinessBotRecipients"
+          ]
+        }
+      ],
+      "exports": [
+        "ask_api_id",
+        "ask_api_hash",
+        "ask_phone",
+        "ask_bot_username",
+        "authorize",
+        "connect_bot"
+      ],
+      "totalLines": 178,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/connect-telegram-business.ps1": {
+      "filePath": "scripts/connect-telegram-business.ps1",
+      "contentHash": "3fd47eb9bae5d8a85bf0141b5c2eff07db192dcc0936ff192df4e7b0e65e9f1c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 30,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/local_setup_bridge.py": {
+      "filePath": "scripts/local_setup_bridge.py",
+      "contentHash": "568f612acbbac9474510ef295ca3435e4fcce143951a547dc5fe8bbe86c754a4",
+      "functions": [
+        {
+          "name": "load_env",
+          "params": [],
+          "returnType": "dict[str, str]",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "update_env",
+          "params": [
+            "changes"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "load_state",
+          "params": [],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "update_state",
+          "params": [
+            "changes"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "telegram_bot_api",
+          "params": [
+            "token",
+            "method",
+            "payload"
+          ],
+          "returnType": "Any",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "configure_bot",
+          "params": [
+            "token"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 30
+        },
+        {
+          "name": "mark_hidden",
+          "params": [
+            "path"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "start_user_listener",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "public_status",
+          "params": [],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 33
+        },
+        {
+          "name": "friendly_telegram_error",
+          "params": [
+            "error"
+          ],
+          "returnType": "SetupError",
+          "exported": true,
+          "lineCount": 21
+        }
+      ],
+      "classes": [
+        {
+          "name": "SetupError",
+          "methods": [
+            "__init__"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "TelegramSetupState",
+          "methods": [
+            "__init__",
+            "_run_loop",
+            "run",
+            "_disconnect_pending",
+            "begin",
+            "submit_code",
+            "submit_password",
+            "_finalize",
+            "business_status",
+            "connect_business"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 218
+        },
+        {
+          "name": "SetupHandler",
+          "methods": [
+            "log_message",
+            "_origin",
+            "_cors_headers",
+            "_json",
+            "_authorized",
+            "_body",
+            "do_OPTIONS",
+            "do_GET",
+            "do_POST"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 138
+        }
+      ],
+      "imports": [
+        {
+          "source": "asyncio",
+          "specifiers": [
+            "asyncio"
+          ]
+        },
+        {
+          "source": "ctypes",
+          "specifiers": [
+            "ctypes"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "secrets",
+          "specifiers": [
+            "secrets"
+          ]
+        },
+        {
+          "source": "subprocess",
+          "specifiers": [
+            "subprocess"
+          ]
+        },
+        {
+          "source": "threading",
+          "specifiers": [
+            "threading"
+          ]
+        },
+        {
+          "source": "urllib.error",
+          "specifiers": [
+            "urllib.error"
+          ]
+        },
+        {
+          "source": "urllib.request",
+          "specifiers": [
+            "urllib.request"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime",
+            "timezone"
+          ]
+        },
+        {
+          "source": "http.server",
+          "specifiers": [
+            "BaseHTTPRequestHandler",
+            "ThreadingHTTPServer"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "urllib.parse",
+          "specifiers": [
+            "urlparse"
+          ]
+        },
+        {
+          "source": "truststore",
+          "specifiers": [
+            "truststore"
+          ]
+        },
+        {
+          "source": "telethon",
+          "specifiers": [
+            "TelegramClient",
+            "errors",
+            "utils"
+          ]
+        },
+        {
+          "source": "telethon.sessions",
+          "specifiers": [
+            "StringSession"
+          ]
+        },
+        {
+          "source": "telethon.tl.functions.account",
+          "specifiers": [
+            "GetConnectedBotsRequest",
+            "UpdateConnectedBotRequest"
+          ]
+        },
+        {
+          "source": "telethon.tl.types",
+          "specifiers": [
+            "BusinessBotRights",
+            "InputBusinessBotRecipients"
+          ]
+        },
+        {
+          "source": "telegram_user_session",
+          "specifiers": [
+            "SESSION_PATH",
+            "load_session",
+            "save_session"
+          ]
+        }
+      ],
+      "exports": [
+        "SetupError",
+        "load_env",
+        "update_env",
+        "load_state",
+        "update_state",
+        "telegram_bot_api",
+        "configure_bot",
+        "mark_hidden",
+        "start_user_listener",
+        "TelegramSetupState",
+        "public_status",
+        "friendly_telegram_error",
+        "SetupHandler"
+      ],
+      "totalLines": 612,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/run-local-setup-bridge.ps1": {
+      "filePath": "scripts/run-local-setup-bridge.ps1",
+      "contentHash": "6ac45cdec18aa33ff7bbe12d830b425f43e515f09c9885991aed0a7a419627c7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/run-relaydesk-server.ps1": {
+      "filePath": "scripts/run-relaydesk-server.ps1",
+      "contentHash": "43c037d3b60c944fd85c82101e5957a8e2a8dd0f1352dd20866bce250867eb8e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/run-telegram-user-listener.ps1": {
+      "filePath": "scripts/run-telegram-user-listener.ps1",
+      "contentHash": "f44f3610c50cebcb8d2eabc2d0ae1e1231ca16420e1a95046e0aed4358cd5082",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 27,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/start-local-telegram.ps1": {
+      "filePath": "scripts/start-local-telegram.ps1",
+      "contentHash": "9828e1bc62c91af6de92ef88d94011d8eb17cb706543bfa4b5916f4236a05c22",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 165,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/sync_telegram_history.py": {
+      "filePath": "scripts/sync_telegram_history.py",
+      "contentHash": "4657b2de11b20a9877cb8416e64819005dc442eaaff47aa42c3be701edf3dac8",
+      "functions": [
+        {
+          "name": "write_status",
+          "params": [
+            "phase"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "load_env",
+          "params": [
+            "path"
+          ],
+          "returnType": "dict[str, str]",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "ask_api_id",
+          "params": [],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "ask_api_hash",
+          "params": [],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "ask_phone",
+          "params": [],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "ask_limit",
+          "params": [
+            "label",
+            "default",
+            "maximum"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "authorize",
+          "params": [
+            "client",
+            "phone"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "request_json",
+          "params": [
+            "url",
+            "payload",
+            "webhook_secret"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 29
+        },
+        {
+          "name": "chat_from_entity",
+          "params": [
+            "entity"
+          ],
+          "returnType": "tuple[str, dict[str, Any]] | None",
+          "exported": true,
+          "lineCount": 40
+        },
+        {
+          "name": "sender_payload",
+          "params": [
+            "sender",
+            "fallback"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "historical_text",
+          "params": [
+            "message"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "message_payload",
+          "params": [
+            "message",
+            "source",
+            "chat",
+            "connection_id",
+            "account",
+            "topic_id",
+            "topic_title"
+          ],
+          "returnType": "dict[str, Any] | None",
+          "exported": true,
+          "lineCount": 54
+        },
+        {
+          "name": "forum_topics",
+          "params": [
+            "client",
+            "entity"
+          ],
+          "returnType": "dict[int, str]",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "post_batch",
+          "params": [
+            "items",
+            "webhook_secret"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "sync_history",
+          "params": [],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 170
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "asyncio",
+          "specifiers": [
+            "asyncio"
+          ]
+        },
+        {
+          "source": "getpass",
+          "specifiers": [
+            "getpass"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "urllib.error",
+          "specifiers": [
+            "urllib.error"
+          ]
+        },
+        {
+          "source": "urllib.request",
+          "specifiers": [
+            "urllib.request"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "truststore",
+          "specifiers": [
+            "truststore"
+          ]
+        },
+        {
+          "source": "telethon",
+          "specifiers": [
+            "TelegramClient",
+            "errors",
+            "types",
+            "utils"
+          ]
+        },
+        {
+          "source": "telethon.sessions",
+          "specifiers": [
+            "MemorySession"
+          ]
+        },
+        {
+          "source": "telethon.tl.functions.messages",
+          "specifiers": [
+            "GetForumTopicsRequest"
+          ]
+        }
+      ],
+      "exports": [
+        "write_status",
+        "load_env",
+        "ask_api_id",
+        "ask_api_hash",
+        "ask_phone",
+        "ask_limit",
+        "authorize",
+        "request_json",
+        "chat_from_entity",
+        "sender_payload",
+        "historical_text",
+        "message_payload",
+        "forum_topics",
+        "post_batch",
+        "sync_history"
+      ],
+      "totalLines": 494,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/sync-telegram-history.ps1": {
+      "filePath": "scripts/sync-telegram-history.ps1",
+      "contentHash": "76cb423fbc6212bdcfc2c093d5ce5371586fcc4e90913f27beac4e82524da5d3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 37,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/telegram_long_poll.py": {
+      "filePath": "scripts/telegram_long_poll.py",
+      "contentHash": "67d4826448b970226d94f2e69a363d29c59e43cd32a5abe1060baa7613ceaadd",
+      "functions": [
+        {
+          "name": "load_env",
+          "params": [
+            "path"
+          ],
+          "returnType": "dict[str, str]",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "read_json_response",
+          "params": [
+            "request",
+            "timeout"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "telegram_call",
+          "params": [
+            "token",
+            "method",
+            "payload",
+            "timeout"
+          ],
+          "returnType": "Any",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "verify_local_relay",
+          "params": [],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "relay_update",
+          "params": [
+            "update",
+            "webhook_secret"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "remove_existing_webhook",
+          "params": [
+            "token"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "run",
+          "params": [],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 54
+        }
+      ],
+      "classes": [
+        {
+          "name": "TelegramApiError",
+          "methods": [],
+          "properties": [],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "LocalRelayError",
+          "methods": [],
+          "properties": [],
+          "exported": true,
+          "lineCount": 2
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "urllib.error",
+          "specifiers": [
+            "urllib.error"
+          ]
+        },
+        {
+          "source": "urllib.request",
+          "specifiers": [
+            "urllib.request"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "truststore",
+          "specifiers": [
+            "truststore"
+          ]
+        }
+      ],
+      "exports": [
+        "TelegramApiError",
+        "LocalRelayError",
+        "load_env",
+        "read_json_response",
+        "telegram_call",
+        "verify_local_relay",
+        "relay_update",
+        "remove_existing_webhook",
+        "run"
+      ],
+      "totalLines": 215,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/telegram_user_long_poll.py": {
+      "filePath": "scripts/telegram_user_long_poll.py",
+      "contentHash": "4a1e10441e9094524fcea3f6e9544390db8256f71ea7667afcfea3f2c4be37b4",
+      "functions": [
+        {
+          "name": "load_env",
+          "params": [],
+          "returnType": "dict[str, str]",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "request_json",
+          "params": [
+            "url",
+            "secret",
+            "payload"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 29
+        },
+        {
+          "name": "acquire_single_instance",
+          "params": [],
+          "returnType": "Any",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "chat_payload",
+          "params": [
+            "entity"
+          ],
+          "returnType": "dict[str, Any] | None",
+          "exported": true,
+          "lineCount": 17
+        },
+        {
+          "name": "folder_peer_payload",
+          "params": [
+            "entity"
+          ],
+          "returnType": "dict[str, Any] | None",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "peer_id",
+          "params": [
+            "value"
+          ],
+          "returnType": "int | None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "dialog_is_muted",
+          "params": [
+            "dialog"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "dialog_matches_filter",
+          "params": [
+            "dialog",
+            "dialog_filter"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 27
+        },
+        {
+          "name": "build_folder_snapshot",
+          "params": [
+            "client"
+          ],
+          "returnType": "list[dict[str, Any]]",
+          "exported": true,
+          "lineCount": 62
+        },
+        {
+          "name": "sender_payload",
+          "params": [
+            "sender",
+            "account",
+            "outgoing"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "attachment_payload",
+          "params": [
+            "message"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 39
+        },
+        {
+          "name": "read_forum_topics",
+          "params": [
+            "client",
+            "entity"
+          ],
+          "returnType": "dict[int, str]",
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "topic_details",
+          "params": [
+            "message",
+            "entity",
+            "topics"
+          ],
+          "returnType": "tuple[int | None, str | None]",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "build_item",
+          "params": [
+            "message",
+            "entity",
+            "account",
+            "topics",
+            "historical",
+            "edited"
+          ],
+          "returnType": "dict[str, Any] | None",
+          "exported": true,
+          "lineCount": 53
+        },
+        {
+          "name": "post_with_retry",
+          "params": [
+            "items",
+            "secret"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "run_listener",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 191
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "asyncio",
+          "specifiers": [
+            "asyncio"
+          ]
+        },
+        {
+          "source": "ctypes",
+          "specifiers": [
+            "ctypes"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "urllib.error",
+          "specifiers": [
+            "urllib.error"
+          ]
+        },
+        {
+          "source": "urllib.request",
+          "specifiers": [
+            "urllib.request"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "truststore",
+          "specifiers": [
+            "truststore"
+          ]
+        },
+        {
+          "source": "telethon",
+          "specifiers": [
+            "TelegramClient",
+            "errors",
+            "events",
+            "types",
+            "utils"
+          ]
+        },
+        {
+          "source": "telethon.sessions",
+          "specifiers": [
+            "StringSession"
+          ]
+        },
+        {
+          "source": "telethon.tl.functions.messages",
+          "specifiers": [
+            "GetDialogFiltersRequest",
+            "GetForumTopicsRequest"
+          ]
+        },
+        {
+          "source": "telegram_user_session",
+          "specifiers": [
+            "load_session"
+          ]
+        }
+      ],
+      "exports": [
+        "load_env",
+        "request_json",
+        "acquire_single_instance",
+        "chat_payload",
+        "folder_peer_payload",
+        "peer_id",
+        "dialog_is_muted",
+        "dialog_matches_filter",
+        "build_folder_snapshot",
+        "sender_payload",
+        "attachment_payload",
+        "read_forum_topics",
+        "topic_details",
+        "build_item",
+        "post_with_retry",
+        "run_listener"
+      ],
+      "totalLines": 622,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/telegram_user_session.py": {
+      "filePath": "scripts/telegram_user_session.py",
+      "contentHash": "7c7f41df0726b499b82ac5b7975dfbdb15c55293dae2dee71a166b09d3f0dae8",
+      "functions": [
+        {
+          "name": "_input_blob",
+          "params": [
+            "data"
+          ],
+          "returnType": "tuple[DataBlob, Any]",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_crypt",
+          "params": [
+            "data",
+            "protect"
+          ],
+          "returnType": "bytes",
+          "exported": true,
+          "lineCount": 45
+        },
+        {
+          "name": "protect",
+          "params": [
+            "data"
+          ],
+          "returnType": "bytes",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "unprotect",
+          "params": [
+            "data"
+          ],
+          "returnType": "bytes",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "save_session",
+          "params": [
+            "bundle"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "load_session",
+          "params": [],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 18
+        }
+      ],
+      "classes": [
+        {
+          "name": "DataBlob",
+          "methods": [],
+          "properties": [],
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "imports": [
+        {
+          "source": "ctypes",
+          "specifiers": [
+            "ctypes"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "ctypes",
+          "specifiers": [
+            "wintypes"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        }
+      ],
+      "exports": [
+        "DataBlob",
+        "_input_blob",
+        "_crypt",
+        "protect",
+        "unprotect",
+        "save_session",
+        "load_session"
+      ],
+      "totalLines": 127,
+      "hasStructuralAnalysis": true
+    },
+    "tests/rendered-html.test.mjs": {
+      "filePath": "tests/rendered-html.test.mjs",
+      "contentHash": "417472154251e14f043d971236009fa767bd1b8f5fdf2fe11edbe75a5e426c13",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:assert/strict",
+          "specifiers": [
+            "assert"
+          ]
+        },
+        {
+          "source": "node:fs/promises",
+          "specifiers": [
+            "access",
+            "readFile"
+          ]
+        },
+        {
+          "source": "node:test",
+          "specifiers": [
+            "test"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 72,
+      "hasStructuralAnalysis": true
+    },
+    "tsconfig.json": {
+      "filePath": "tsconfig.json",
+      "contentHash": "1e81bc8b078caeaf846621a6e062cb9c47d4ec337506fccf5149c28623b8f7b3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 36,
+      "hasStructuralAnalysis": true
+    },
+    "vite.config.ts": {
+      "filePath": "vite.config.ts",
+      "contentHash": "475d37f95297a1000093c4a2cf6d819bfb4328fea0685479d94430f4680a1056",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vinext",
+          "specifiers": [
+            "vinext"
+          ]
+        },
+        {
+          "source": "vite",
+          "specifiers": [
+            "defineConfig"
+          ]
+        },
+        {
+          "source": "./.openai/hosting.json",
+          "specifiers": [
+            "hostingConfig"
+          ]
+        },
+        {
+          "source": "./build/local-media-upload-vite-plugin",
+          "specifiers": [
+            "localMediaUpload"
+          ]
+        },
+        {
+          "source": "./build/sites-vite-plugin",
+          "specifiers": [
+            "sites"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 65,
+      "hasStructuralAnalysis": true
+    },
+    "worker/index.ts": {
+      "filePath": "worker/index.ts",
+      "contentHash": "6f8983ab616309202039ad672b1a46a835bede1bb77636dc751613c664f969e5",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vinext/server/image-optimization",
+          "specifiers": [
+            "handleImageOptimization",
+            "DEFAULT_DEVICE_SIZES",
+            "DEFAULT_IMAGE_SIZES"
+          ]
+        },
+        {
+          "source": "vinext/server/app-router-entry",
+          "specifiers": [
+            "handler"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

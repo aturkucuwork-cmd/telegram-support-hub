@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { ensureSchema } from "@/db/ensure";
 import { auditLogs, conversations } from "@/db/schema";
-import { requireActor } from "@/lib/auth";
+import { isSameOriginRequest, requireActor } from "@/lib/auth";
 import { resolveReplyParameters } from "@/lib/reply";
 import {
   BOT_GROUP_CONNECTION_ID,
@@ -19,6 +19,9 @@ const PHOTO_LIMIT = 10 * 1024 * 1024;
 const VIDEO_LIMIT = 50 * 1024 * 1024;
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) {
+    return Response.json({ error: "Geçersiz istek kaynağı." }, { status: 403 });
+  }
   const actor = await requireActor(request);
   if (actor instanceof Response) return actor;
 

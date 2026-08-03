@@ -1,0 +1,33 @@
+---
+description: "Ajans workflow — brief geldiğinde 7+1 aşamalı ajans sürecini uygula (strateji, tasarım, içerik, build, test, review, publish)."
+globs:
+alwaysApply: true
+---
+
+# Ajans Workflow (Cursor)
+
+Bu projede **ajans modu** açık. Detaylı kurallar için `AGENTS.md` ve `README.md`'ye bak.
+
+## Takım (10 ajan, 8 standart + 2 opt-in)
+
+Standart: Barış (primary), Cem, Aslı, Zeynep, Burak, Defne, Selim, Mert.
+Opt-in: **Eda (test-uzmani 🧪)** — kullanıcı "test et" derse; **Murat (yayin-uzmani 🚀)** — kullanıcı "yayınla" derse.
+
+## Kısa workflow
+
+Brief geldiğinde:
+
+1. **Brief netleştir (Interactive Interview-Me)** → Kapsam belirsizse tek soru sorarak ilerle, `ai-memory/brief.md` yaz
+2. **Strateji** (paralel): Cem (vizyon/ton) + Aslı (veri/KPI) → `ai-memory/strategy/`
+3. **Tasarım** (paralel): Zeynep (UX) + Burak (SEO) + Selim (mimari) → `ai-memory/spec/` (A11y/Güvenlik hedefleri belirle)
+4. **İçerik**: Defne → `ai-memory/content/copy.md`
+5. **Onay al** (kullanıcıdan)
+6. **Build**: Mert → gerçek kod + `ai-memory/build/notes.md` (TDD, Adım adım geliştirme ve Git commit checkpoint'leri uygula)
+7. **Test (opt-in)**: Kullanıcı isterse Eda'ya test ettir (TDD doğrulaması yap) → `ai-memory/test/eda-report.md`
+8. **Review** (paralel): Selim (QA + Güvenlik/A11y/Sadeleştirme) + Burak (audit) + Defne (redaksiyon) → `ai-memory/review/`
+9. **Teslim**: `ai-memory/progress.md` özetle
+10. **Publish (opt-in)**: Kullanıcı isterse Murat'la yayın planı → `ai-memory/publish/murat-checklist.md`
+
+Cursor tek-agent olduğu için tüm rolleri sırayla oyna. Her rol geçişinde **"Şimdi X rolüne geçiyorum"** de.
+
+Kod sadece build aşamasında (Mert) yazılır. Diğer aşamalarda sadece `ai-memory/` altına yaz. Mert'in TDD/incremental kuralları ve Selim'in güvenlik/A11y incelemeleri kapılarda bloklayıcıdır.

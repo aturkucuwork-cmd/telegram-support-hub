@@ -1,13 +1,19 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
 /.venv/
 __pycache__/
 *.pyc
+
+# local SQLite database (default DATABASE_PATH)
+/data/
 /.sync-status.json
 /.telegram-user-session.dpapi
 /.telegram-user-session.dpapi.tmp
+/.telegram-user-session.enc
+/.telegram-user-session.enc.tmp
+/.telegram-user-long-poll.lock
 /.local-setup-state.json
 /.local-setup-state.tmp
 .env.local.tmp
@@ -51,3 +57,19 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# ajans local/runtime artifacts
+/.opencode/node_modules/
+/.opencode/package.json
+/.opencode/package-lock.json
+/.opencode/bun.lock
+/ai-memory/memory/
+/ai-memory/*.bak
+/.ajans-version.lock
+/backup/
+Thumbs.db
+*.swp
+*.swo
+*~
+/.idea/
+/.vscode/

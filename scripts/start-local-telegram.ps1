@@ -8,7 +8,7 @@ $serverScript = Join-Path $PSScriptRoot "run-relaydesk-server.ps1"
 $pollerScript = Join-Path $PSScriptRoot "telegram_long_poll.py"
 $userListenerRunner = Join-Path $PSScriptRoot "run-telegram-user-listener.ps1"
 $setupBridgeRunner = Join-Path $PSScriptRoot "run-local-setup-bridge.ps1"
-$userSessionPath = Join-Path $projectRoot ".telegram-user-session.dpapi"
+$userSessionPath = Join-Path $projectRoot ".telegram-user-session.enc"
 $pythonPath = Join-Path $projectRoot ".venv\Scripts\python.exe"
 $requirementsPath = Join-Path $projectRoot "requirements-connect.txt"
 

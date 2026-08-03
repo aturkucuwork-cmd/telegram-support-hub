@@ -5,7 +5,7 @@ Set-StrictMode -Version Latest
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $pythonPath = Join-Path $projectRoot ".venv\Scripts\python.exe"
 $listenerScript = Join-Path $PSScriptRoot "telegram_user_long_poll.py"
-$sessionPath = Join-Path $projectRoot ".telegram-user-session.dpapi"
+$sessionPath = Join-Path $projectRoot ".telegram-user-session.enc"
 
 Set-Location -LiteralPath $projectRoot
 $Host.UI.RawUI.WindowTitle = "RelayDesk Grup ve Kanal Akışı"

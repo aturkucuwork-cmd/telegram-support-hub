@@ -1,4 +1,3 @@
-import { env } from "cloudflare:workers";
 import { and, eq, gt, lt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { ensureSchema } from "@/db/ensure";
@@ -17,6 +16,14 @@ const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 const EMAIL_HEADER = "oai-authenticated-user-email";
 const NAME_HEADER = "oai-authenticated-user-full-name";
 const NAME_ENCODING_HEADER = "oai-authenticated-user-full-name-encoding";
+const TRUSTED_HOSTING_ADAPTER = "RELAYDESK_TRUSTED_HOSTING_ADAPTER";
+const TRUST_PROXY = "RELAYDESK_TRUST_PROXY";
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_LOCKOUT_MS = 10 * 60 * 1000;
+const MAX_LOGIN_FAILURES = 5;
+
+type LoginAttempt = { failures: number; firstFailureAt: number; lockedUntil: number };
+const loginAttempts = new Map<string, LoginAttempt>();
 
 function safeDecode(value: string | null): string | null {
   if (!value) return null;
@@ -28,7 +35,7 @@ function safeDecode(value: string | null): string | null {
 }
 
 function runtimeValue(name: string): string | undefined {
-  return (env as unknown as Record<string, string | undefined>)[name];
+  return process.env[name];
 }
 
 function cookieValue(request: Request, name: string): string | null {
@@ -45,12 +52,71 @@ function cookieValue(request: Request, name: string): string | null {
 
 export function isSameOriginRequest(request: Request): boolean {
   const origin = request.headers.get("origin");
-  if (!origin) return true;
+  const fallback = request.headers.get("referer");
+  const candidate = origin || fallback;
+  if (!candidate) return false;
   try {
-    return new URL(origin).origin === new URL(request.url).origin;
+    return new URL(candidate).origin === new URL(request.url).origin;
   } catch {
     return false;
   }
+}
+
+function trustedHostingAdapterEnabled(): boolean {
+  return ["1", "true", "yes"].includes(
+    runtimeValue(TRUSTED_HOSTING_ADAPTER)?.trim().toLowerCase() ?? "",
+  );
+}
+
+function clientAddress(request: Request): string {
+  if (!["1", "true", "yes"].includes(runtimeValue(TRUST_PROXY)?.trim().toLowerCase() ?? "")) {
+    return "direct-client";
+  }
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const real = request.headers.get("x-real-ip")?.trim();
+  return forwarded || real || "unknown-proxy-client";
+}
+
+function loginKey(request: Request, email: string): string {
+  return `${clientAddress(request)}:${email}`;
+}
+
+function pruneLoginAttempts(now: number): void {
+  for (const [key, attempt] of loginAttempts) {
+    if (attempt.lockedUntil <= now && now - attempt.firstFailureAt > LOGIN_WINDOW_MS) {
+      loginAttempts.delete(key);
+    }
+  }
+}
+
+export function loginLockState(request: Request, email: string): { retryAfter: number } | null {
+  const now = Date.now();
+  pruneLoginAttempts(now);
+  const attempt = loginAttempts.get(loginKey(request, email));
+  if (!attempt || attempt.lockedUntil <= now) return null;
+  return { retryAfter: Math.max(1, Math.ceil((attempt.lockedUntil - now) / 1000)) };
+}
+
+export function recordLoginFailure(request: Request, email: string): void {
+  const now = Date.now();
+  pruneLoginAttempts(now);
+  const key = loginKey(request, email);
+  const previous = loginAttempts.get(key);
+  const attempt =
+    previous && now - previous.firstFailureAt <= LOGIN_WINDOW_MS
+      ? previous
+      : { failures: 0, firstFailureAt: now, lockedUntil: 0 };
+  attempt.failures += 1;
+  if (attempt.failures >= MAX_LOGIN_FAILURES) attempt.lockedUntil = now + LOGIN_LOCKOUT_MS;
+  loginAttempts.set(key, attempt);
+}
+
+export function clearLoginFailures(request: Request, email: string): void {
+  loginAttempts.delete(loginKey(request, email));
+}
+
+export function resetLoginRateLimitForTests(): void {
+  loginAttempts.clear();
 }
 
 export function validateAccountInput(input: {
@@ -147,7 +213,9 @@ async function actorFromWorkspace(request: Request): Promise<Actor | null> {
 
 export async function getActor(request: Request): Promise<Actor | null> {
   await ensureSchema();
-  return (await actorFromSession(request)) ?? actorFromWorkspace(request);
+  const sessionActor = await actorFromSession(request);
+  if (sessionActor) return sessionActor;
+  return trustedHostingAdapterEnabled() ? actorFromWorkspace(request) : null;
 }
 
 export async function requireActor(request: Request): Promise<Actor | Response> {

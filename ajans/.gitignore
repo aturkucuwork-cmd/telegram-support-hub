@@ -1,0 +1,27 @@
+# opencode otomatik dosyalar (her makinede yeniden oluşur, commit'lenmez)
+.opencode/node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/bun.lock
+
+# ai-memory oturum notları (kişisel/septomatik içerik olabilir, opsiyonel)
+ai-memory/memory/
+ai-memory/*.bak
+
+# Genel
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+*.tmp
+.env
+.env.local
+.idea/
+.vscode/
+
+# ajans-version lock (script yazar, çakışma olmasın)
+.ajans-version.lock
+
+# sync-ajans.ps1'in olusturdugu yedek klasoru (gecici, commit'lenmez)
+backup/

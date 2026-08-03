@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { ensureSchema } from "@/db/ensure";
 import { telegramUserListeners } from "@/db/schema";
-import { telegramConfig } from "@/lib/telegram";
+import { requireInternalApi } from "@/lib/internal-api";
 
 type HeartbeatBody = {
   telegramUserId?: unknown;
@@ -11,15 +11,8 @@ type HeartbeatBody = {
 };
 
 export async function POST(request: Request) {
-  const { webhookSecret } = telegramConfig();
-  if (!webhookSecret) {
-    return Response.json({ error: "Telegram henüz yapılandırılmadı." }, { status: 503 });
-  }
-  if (
-    request.headers.get("x-telegram-bot-api-secret-token") !== webhookSecret
-  ) {
-    return Response.json({ error: "Geçersiz dinleyici imzası." }, { status: 401 });
-  }
+  const authorization = requireInternalApi(request);
+  if (authorization) return authorization;
 
   const body = (await request.json()) as HeartbeatBody;
   if (

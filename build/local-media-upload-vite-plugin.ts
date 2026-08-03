@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { randomUUID } from "node:crypto";
 import type { Plugin } from "vite";
 import { loadEnv } from "vite";
 
@@ -50,6 +51,7 @@ function formString(form: FormData, name: string): string {
 export function localMediaUpload(): Plugin {
   let botToken = "";
   let webhookSecret = "";
+  let internalSecret = "";
 
   return {
     name: "relaydesk-local-media-upload",
@@ -59,6 +61,7 @@ export function localMediaUpload(): Plugin {
       const env = loadEnv(config.mode, config.root, "");
       botToken = env.TELEGRAM_BOT_TOKEN?.trim() || "";
       webhookSecret = env.TELEGRAM_WEBHOOK_SECRET?.trim() || "";
+      internalSecret = env.INTERNAL_API_SECRET?.trim() || "";
     },
     configureServer(server) {
       server.middlewares.use(async (request, response, next) => {
@@ -73,7 +76,7 @@ export function localMediaUpload(): Plugin {
           sendJson(response, 403, { error: "Yerel medya isteğinin kaynağı geçersiz." });
           return;
         }
-        if (!botToken || !webhookSecret) {
+        if (!botToken || !webhookSecret || !internalSecret) {
           sendJson(response, 503, { error: "Telegram yerel ayarları yüklenmedi." });
           return;
         }
@@ -203,7 +206,9 @@ export function localMediaUpload(): Plugin {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-Telegram-Bot-Api-Secret-Token": webhookSecret,
+              "X-RelayDesk-Internal-Secret": internalSecret,
+              "X-RelayDesk-Internal-Timestamp": String(Date.now()),
+              "X-RelayDesk-Internal-Nonce": randomUUID(),
             },
             body: JSON.stringify({
               items: [

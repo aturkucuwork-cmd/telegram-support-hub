@@ -2,7 +2,7 @@ import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { ensureSchema } from "@/db/ensure";
 import { auditLogs, conversations } from "@/db/schema";
-import { requireActor } from "@/lib/auth";
+import { isSameOriginRequest, requireActor } from "@/lib/auth";
 
 export async function GET(request: Request) {
   const actor = await requireActor(request);
@@ -35,6 +35,9 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  if (!isSameOriginRequest(request)) {
+    return Response.json({ error: "Geçersiz istek kaynağı." }, { status: 403 });
+  }
   const actor = await requireActor(request);
   if (actor instanceof Response) return actor;
 

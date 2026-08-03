@@ -1,7 +1,10 @@
-import { requireActor } from "@/lib/auth";
+import { isSameOriginRequest, requireActor } from "@/lib/auth";
 import { telegramApi, telegramConfig } from "@/lib/telegram";
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) {
+    return Response.json({ error: "Geçersiz istek kaynağı." }, { status: 403 });
+  }
   const actor = await requireActor(request);
   if (actor instanceof Response) return actor;
 

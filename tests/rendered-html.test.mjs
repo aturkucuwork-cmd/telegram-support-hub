@@ -48,7 +48,7 @@ test("builds the RelayDesk support application", async () => {
   assert.match(folderPanel, /TELEGRAM · OTOMATİK YÖNLENDİRME/);
   assert.match(folderPanel, /Elle yapılmış kişi atamaları korunur/);
   assert.match(folderApi, /requireAdmin/);
-  assert.match(folderApi, /x-telegram-bot-api-secret-token/);
+   assert.match(folderApi, /requireInternalApi/);
   assert.match(folderApi, /recalculateFolderAssignments/);
   assert.match(folderAssignments, /assignmentSource/);
   assert.match(folderAssignments, /telegram_folder/);
@@ -101,7 +101,7 @@ test("P0 readiness and history status keep authenticated status private", async 
   ]);
 
   assert.match(healthz, /api\/healthz|ready/);
-  assert.match(internalStatus, /INTERNAL_API_SECRET/);
+   assert.match(internalStatus, /requireInternalApi/);
   assert.match(internalStatus, /localhost|127\.0\.0\.1/);
   assert.match(history, /INTERNAL_API_SECRET/);
   assert.match(history, /X-RelayDesk-Internal-Secret/);

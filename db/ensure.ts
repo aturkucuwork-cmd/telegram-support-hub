@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { getRawDb } from "./index";
 
 let initialized: Promise<void> | null = null;
 
@@ -155,71 +155,72 @@ export async function ensureSchema(): Promise<void> {
   if (initialized) return initialized;
 
   initialized = (async () => {
-    if (!env.DB) throw new Error("DB binding is unavailable");
-    await env.DB.batch(statements.map((statement) => env.DB.prepare(statement)));
+    const db = getRawDb();
 
-    const columns = await env.DB.prepare("PRAGMA table_info(conversations)").all<{
+    for (const statement of statements) {
+      db.exec(statement);
+    }
+
+    const columns = db.prepare("PRAGMA table_info(conversations)").all() as {
       name: string;
-    }>();
-    if (!columns.results.some((column) => column.name === "topic_id")) {
-      await env.DB.prepare(
+    }[];
+    if (!columns.some((column) => column.name === "topic_id")) {
+      db.prepare(
         "ALTER TABLE conversations ADD COLUMN topic_id TEXT NOT NULL DEFAULT ''",
       ).run();
     }
-    if (!columns.results.some((column) => column.name === "assignment_source")) {
-      await env.DB.prepare(
+    if (!columns.some((column) => column.name === "assignment_source")) {
+      db.prepare(
         "ALTER TABLE conversations ADD COLUMN assignment_source TEXT",
       ).run();
     }
-    if (!columns.results.some((column) => column.name === "assignment_folder_id")) {
-      await env.DB.prepare(
+    if (!columns.some((column) => column.name === "assignment_folder_id")) {
+      db.prepare(
         "ALTER TABLE conversations ADD COLUMN assignment_folder_id INTEGER",
       ).run();
     }
-    await env.DB.prepare(
+    db.prepare(
       `CREATE INDEX IF NOT EXISTS conversations_assignment_folder_idx
        ON conversations (assignment_folder_id)`,
     ).run();
-    await env.DB.prepare(
+    db.prepare(
       `UPDATE conversations
        SET assignment_source = 'manual'
        WHERE assigned_to_email IS NOT NULL
          AND assignment_source IS NULL`,
     ).run();
 
-    const agentColumns = await env.DB.prepare("PRAGMA table_info(agents)").all<{
+    const agentColumns = db.prepare("PRAGMA table_info(agents)").all() as {
       name: string;
-    }>();
-    if (!agentColumns.results.some((column) => column.name === "password_hash")) {
-      await env.DB.prepare("ALTER TABLE agents ADD COLUMN password_hash TEXT").run();
+    }[];
+    if (!agentColumns.some((column) => column.name === "password_hash")) {
+      db.prepare("ALTER TABLE agents ADD COLUMN password_hash TEXT").run();
     }
-    if (!agentColumns.results.some((column) => column.name === "password_salt")) {
-      await env.DB.prepare("ALTER TABLE agents ADD COLUMN password_salt TEXT").run();
+    if (!agentColumns.some((column) => column.name === "password_salt")) {
+      db.prepare("ALTER TABLE agents ADD COLUMN password_salt TEXT").run();
     }
-    if (!agentColumns.results.some((column) => column.name === "is_active")) {
-      await env.DB.prepare(
+    if (!agentColumns.some((column) => column.name === "is_active")) {
+      db.prepare(
         "ALTER TABLE agents ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1",
       ).run();
     }
 
-    const messageColumns = await env.DB.prepare("PRAGMA table_info(messages)").all<{
+    const messageColumns = db.prepare("PRAGMA table_info(messages)").all() as {
       name: string;
-    }>();
-    if (!messageColumns.results.some((column) => column.name === "reply_to_telegram_message_id")) {
-      await env.DB.prepare(
+    }[];
+    if (!messageColumns.some((column) => column.name === "reply_to_telegram_message_id")) {
+      db.prepare(
         "ALTER TABLE messages ADD COLUMN reply_to_telegram_message_id TEXT",
       ).run();
     }
 
-    await env.DB.batch([
-      env.DB.prepare("DROP INDEX IF EXISTS conversations_connection_chat_unique"),
-      env.DB.prepare(
-        `CREATE UNIQUE INDEX IF NOT EXISTS conversations_connection_chat_topic_unique
-         ON conversations (connection_id, telegram_chat_id, topic_id)`,
-      ),
-    ]);
+    db.prepare("DROP INDEX IF EXISTS conversations_connection_chat_unique").run();
+    db.prepare(
+      `CREATE UNIQUE INDEX IF NOT EXISTS conversations_connection_chat_topic_unique
+       ON conversations (connection_id, telegram_chat_id, topic_id)`,
+    ).run();
 
-    await env.DB.prepare(
+    db.prepare(
       `INSERT OR IGNORE INTO message_logs (
         conversation_id,
         telegram_message_id,
@@ -263,7 +264,7 @@ export async function ensureSchema(): Promise<void> {
         AND audit_logs.created_at >= datetime('now', '-30 days')`,
     ).run();
 
-    await env.DB.prepare(
+    db.prepare(
       "DELETE FROM message_logs WHERE sent_at < datetime('now', '-30 days')",
     ).run();
   })();

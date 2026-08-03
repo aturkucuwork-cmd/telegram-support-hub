@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import getpass
 import json
+import secrets
 import re
 import sys
 import urllib.error
@@ -111,6 +112,8 @@ def request_json(
         headers["X-Telegram-Bot-Api-Secret-Token"] = webhook_secret
     if internal_secret:
         headers["X-RelayDesk-Internal-Secret"] = internal_secret
+        headers["X-RelayDesk-Internal-Timestamp"] = str(int(__import__("time").time() * 1000))
+        headers["X-RelayDesk-Internal-Nonce"] = secrets.token_hex(16)
 
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
@@ -296,13 +299,13 @@ async def forum_topics(client: TelegramClient, entity: Any) -> dict[int, str]:
     return topics
 
 
-def post_batch(items: list[dict[str, Any]], webhook_secret: str) -> int:
+def post_batch(items: list[dict[str, Any]], internal_secret: str) -> int:
     if not items:
         return 0
     result = request_json(
         IMPORT_URL,
         payload={"items": items},
-        webhook_secret=webhook_secret,
+        internal_secret=internal_secret,
     )
     return int(result.get("imported", 0))
 
@@ -310,10 +313,7 @@ def post_batch(items: list[dict[str, Any]], webhook_secret: str) -> int:
 async def sync_history() -> int:
     write_status("starting")
     env = load_env(ENV_PATH)
-    webhook_secret = env.get("TELEGRAM_WEBHOOK_SECRET", "")
     internal_secret = env.get("INTERNAL_API_SECRET", "")
-    if not webhook_secret:
-        raise RuntimeError(".env.local içinde webhook gizli anahtarı eksik.")
     if not internal_secret:
         raise RuntimeError(".env.local içinde internal API gizli anahtarı eksik.")
 
@@ -429,12 +429,12 @@ async def sync_history() -> int:
                     continue
                 batch.append(item)
                 if len(batch) >= BATCH_SIZE:
-                    count = post_batch(batch, webhook_secret)
+                    count = post_batch(batch, internal_secret)
                     imported += count
                     dialog_imported += count
                     batch.clear()
 
-            count = post_batch(batch, webhook_secret)
+            count = post_batch(batch, internal_secret)
             imported += count
             dialog_imported += count
             write_status(

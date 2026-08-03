@@ -1,8 +1,7 @@
-import { env } from "cloudflare:workers";
 import { requireAdmin } from "@/lib/auth";
 
 function runtimeValue(name: string): string | undefined {
-  return (env as unknown as Record<string, string | undefined>)[name]?.trim();
+  return process.env[name]?.trim();
 }
 
 export async function GET(request: Request) {

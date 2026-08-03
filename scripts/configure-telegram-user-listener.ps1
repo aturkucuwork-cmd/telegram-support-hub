@@ -7,7 +7,7 @@ $pythonPath = Join-Path $projectRoot ".venv\Scripts\python.exe"
 $requirementsPath = Join-Path $projectRoot "requirements-connect.txt"
 $configureScript = Join-Path $PSScriptRoot "configure_telegram_user_listener.py"
 $runnerScript = Join-Path $PSScriptRoot "run-telegram-user-listener.ps1"
-$sessionPath = Join-Path $projectRoot ".telegram-user-session.dpapi"
+$sessionPath = Join-Path $projectRoot ".telegram-user-session.enc"
 
 Set-Location -LiteralPath $projectRoot
 $Host.UI.RawUI.WindowTitle = "RelayDesk Telegram Kullanıcı Kurulumu"

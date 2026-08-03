@@ -124,6 +124,15 @@ RelayDesk artık Cloudflare D1/Workers'a bağımlı değil: veritabanı yerel SQ
 
 ### Fresh host kurulumu
 
+**Tek komutla (önerilen):** `deploy/install.sh`, Node.js 22/build araçları/Python venv'i apt ile de kurar, projeyi `/opt/relaydesk`'e kopyalar ve provision+bootstrap'ı sırayla çalıştırır — hiçbir ön koşulun host'ta zaten kurulu olması gerekmez:
+
+```bash
+git clone <repo> relaydesk && cd relaydesk
+sudo bash deploy/install.sh
+```
+
+**Manuel (ön koşullar zaten kuruluysa):**
+
 ```bash
 sudo mkdir -p /opt
 sudo git clone <repo> /opt/relaydesk
@@ -132,7 +141,7 @@ sudo bash deploy/provision-relaydesk.sh
 sudo bash deploy/relaydesk-bootstrap.sh
 ```
 
-`provision-relaydesk.sh` `relaydesk` kullanıcı/grubunu, `/opt/relaydesk`, `/var/lib/relaydesk` ve 600 izinli `.env.local` dosyasını oluşturur; native `better-sqlite3`, Python venv/Telethon bağımlılıklarını kurar; unit'leri yükler ve `systemd-analyze verify` çalıştırır. Node.js 22+, Python 3/venv ve systemd hostta önceden bulunmalıdır. Windows'tan `node_modules` kopyalamayın; `npm ci` native binding'i Linux'ta kurar.
+`provision-relaydesk.sh` `relaydesk` kullanıcı/grubunu, `/opt/relaydesk`, `/var/lib/relaydesk` ve 600 izinli `.env.local` dosyasını oluşturur; native `better-sqlite3`, Python venv/Telethon bağımlılıklarını kurar; unit'leri yükler ve `systemd-analyze verify` çalıştırır. Node.js 22+, Python 3/venv ve systemd hostta önceden bulunmalıdır (`install.sh` bunları otomatik kurar, manuel yolda kendiniz kurmalısınız). Windows'tan `node_modules` kopyalamayın; `npm install` native binding'i Linux'ta kurar.
 
 ### Tek env ve polling modeli
 

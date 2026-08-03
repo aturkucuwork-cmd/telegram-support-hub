@@ -25,6 +25,14 @@ for command in node npm python3 systemctl runuser; do
   fi
 done
 
+# Ubuntu ships python3 without the stdlib `venv`/`ensurepip` support by
+# default (a separate apt package) -- fail fast with a clear remediation
+# instead of a confusing mid-script crash once `python3 -m venv` runs below.
+if ! python3 -c "import ensurepip" >/dev/null 2>&1; then
+  echo "python3'ün venv/ensurepip desteği eksik. Kurun: apt install python3-venv" >&2
+  exit 1
+fi
+
 getent group relaydesk >/dev/null 2>&1 || groupadd --system relaydesk
 id relaydesk >/dev/null 2>&1 || useradd --system --gid relaydesk --home-dir "$data_root" --create-home --shell /usr/sbin/nologin relaydesk
 
@@ -76,7 +84,18 @@ os.replace(temporary, env_path)
 os.chmod(env_path, 0o600)
 PY
 
-runuser -u relaydesk -- npm --prefix "$project_root" ci
+# The atomic replace above recreates the file as a fresh inode owned by root
+# (this script runs as root), silently undoing the relaydesk:relaydesk
+# ownership set earlier. Restore it so the unprivileged `runuser -u relaydesk`
+# build steps below (and vinext's own dotenv loading) can read the file.
+chown relaydesk:relaydesk "$env_path"
+
+# `npm ci` requires the lockfile to exactly match package.json, including
+# platform-specific optional dependencies (e.g. native-module helper packages)
+# -- a lockfile committed from a Windows dev machine can omit Linux-only
+# optional entries and make `npm ci` fail on a fresh Linux host. `npm install`
+# reconciles and updates the lockfile in place instead of hard-failing.
+runuser -u relaydesk -- npm --prefix "$project_root" install
 runuser -u relaydesk -- npm --prefix "$project_root" run build
 runuser -u relaydesk -- python3 -m venv "$project_root/.venv"
 runuser -u relaydesk -- "$project_root/.venv/bin/pip" install -r "$project_root/requirements-connect.txt"

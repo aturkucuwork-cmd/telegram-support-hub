@@ -14,8 +14,8 @@ import {
   telegramFolders,
 } from "@/db/schema";
 import { isSameOriginRequest, requireAdmin } from "@/lib/auth";
+import { hasInternalCredentialHeaders, requireInternalApi } from "@/lib/internal-api";
 import { recalculateFolderAssignments } from "@/lib/folder-assignments";
-import { telegramConfig } from "@/lib/telegram";
 
 type FolderPeerInput = {
   id?: unknown;
@@ -65,8 +65,13 @@ function validFolder(value: unknown): value is Required<Pick<FolderInput, "id" |
 }
 
 export async function GET(request: Request) {
-  const actor = await requireAdmin(request);
-  if (actor instanceof Response) return actor;
+  if (hasInternalCredentialHeaders(request)) {
+    const internalAuthorization = requireInternalApi(request);
+    if (internalAuthorization) return internalAuthorization;
+  } else {
+    const actor = await requireAdmin(request);
+    if (actor instanceof Response) return actor;
+  }
   await ensureSchema();
   const db = getDb();
   const [folderRows, memberRows, users] = await Promise.all([
@@ -98,13 +103,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { webhookSecret } = telegramConfig();
-  if (!webhookSecret) {
-    return Response.json({ error: "Telegram henüz yapılandırılmadı." }, { status: 503 });
-  }
-  if (request.headers.get("x-telegram-bot-api-secret-token") !== webhookSecret) {
-    return Response.json({ error: "Geçersiz klasör senkron imzası." }, { status: 401 });
-  }
+  const authorization = requireInternalApi(request);
+  if (authorization) return authorization;
 
   const body = (await request.json().catch(() => null)) as {
     telegramUserId?: unknown;

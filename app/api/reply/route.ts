@@ -2,13 +2,16 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { ensureSchema } from "@/db/ensure";
 import { auditLogs, conversations, messageLogs } from "@/db/schema";
-import { requireActor } from "@/lib/auth";
+import { isSameOriginRequest, requireActor } from "@/lib/auth";
 import { pruneExpiredMessageLogs } from "@/lib/message-logs";
 import { resolveReplyParameters } from "@/lib/reply";
 import { BOT_GROUP_CONNECTION_ID, storeTelegramMessage } from "@/lib/store-telegram";
 import { telegramApi, type TelegramMessage } from "@/lib/telegram";
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) {
+    return Response.json({ error: "Geçersiz istek kaynağı." }, { status: 403 });
+  }
   const actor = await requireActor(request);
   if (actor instanceof Response) return actor;
 
