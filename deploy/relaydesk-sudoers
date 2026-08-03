@@ -1,0 +1,6 @@
+# Installed by deploy/provision-relaydesk.sh. Keep this allowlist narrow: the
+# setup bridge may only control the RelayDesk units it needs for setup.
+relaydesk ALL=(root) NOPASSWD: /usr/bin/systemctl start relaydesk-listener.service
+relaydesk ALL=(root) NOPASSWD: /usr/bin/systemctl try-restart relaydesk-web.service
+relaydesk ALL=(root) NOPASSWD: /usr/bin/systemctl try-restart relaydesk-telegram-poller.service
+relaydesk ALL=(root) NOPASSWD: /usr/bin/systemctl try-restart relaydesk-listener.service

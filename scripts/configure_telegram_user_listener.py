@@ -4,17 +4,30 @@ from __future__ import annotations
 
 import asyncio
 import getpass
+import os
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 
 import truststore
 from telethon import TelegramClient, errors
 from telethon.sessions import StringSession
 
-from telegram_user_session import save_session
-
-
 truststore.inject_into_ssl()
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+ENV_PATH = PROJECT_ROOT / ".env.local"
+
+
+def load_env_into_os_environ() -> None:
+    if not ENV_PATH.exists():
+        return
+    for raw_line in ENV_PATH.read_text(encoding="utf-8-sig").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
 
 
 def ask_api_id() -> int:
@@ -44,7 +57,7 @@ def ask_phone() -> str:
 async def configure() -> None:
     print("\nRelayDesk · Telegram Kullanıcı Dinleyicisi")
     print("Bu işlem yalnızca bir kez yapılır.")
-    print("Gizli bilgiler terminalde görünmez ve Windows hesabınıza bağlı şifrelenir.\n")
+    print("Gizli bilgiler terminalde görünmez; oturum SESSION_ENCRYPTION_KEY ile şifrelenir.\n")
 
     api_id = ask_api_id()
     api_hash = ask_api_hash()
@@ -55,7 +68,7 @@ async def configure() -> None:
         api_hash,
         device_model="RelayDesk Local Listener",
         app_version="1.0",
-        system_version="Windows",
+        system_version="Linux" if os.name != "nt" else "Windows",
     )
 
     try:
@@ -91,12 +104,15 @@ async def configure() -> None:
             }
         )
         print(f"\nBağlantı hazır: {display_name}")
-        print("Oturum Windows DPAPI ile şifrelendi; Telegram'dan çıkış yapılmadı.")
+        print("Oturum SESSION_ENCRYPTION_KEY ile şifrelendi; Telegram'dan çıkış yapılmadı.")
     finally:
         await client.disconnect()
 
 
 if __name__ == "__main__":
+    load_env_into_os_environ()
+    from telegram_user_session import save_session
+
     try:
         asyncio.run(configure())
     except KeyboardInterrupt:

@@ -3,7 +3,7 @@ import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("builds the RelayDesk support application", async () => {
-  const [page, desk, setupWizard, localSetupApi, localSetupBridge, messageLogPanel, messageLogApi, folderPanel, folderApi, folderAssignments, userListener, reply, mediaReply, webhook, configure, status, statusLogic, worker] = await Promise.all([
+  const [page, desk, setupWizard, localSetupApi, localSetupBridge, messageLogPanel, messageLogApi, folderPanel, folderApi, folderAssignments, userListener, reply, mediaReply, webhook, configure, statusLogic, worker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/support-desk.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/setup-wizard.tsx", import.meta.url), "utf8"),
@@ -19,7 +19,6 @@ test("builds the RelayDesk support application", async () => {
     readFile(new URL("../app/api/reply/media/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/telegram/configure/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/status/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/status.ts", import.meta.url), "utf8"),
     access(new URL("../dist/server/index.js", import.meta.url)),
   ]);
@@ -109,4 +108,25 @@ test("P0 readiness and history status keep authenticated status private", async 
   assert.match(status, /requireActor/);
   assert.doesNotMatch(status, /export async function healthz/);
   assert.match(envExample, /INTERNAL_API_SECRET=/);
+});
+
+test("P0 fresh-host provisioning and remote setup bridge are documented", async () => {
+  const [provision, sudoers, readme, bridge, listenerUnit] = await Promise.all([
+    readFile(new URL("../deploy/provision-relaydesk.sh", import.meta.url), "utf8"),
+    readFile(new URL("../deploy/relaydesk-sudoers", import.meta.url), "utf8"),
+    readFile(new URL("../README.md", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/local_setup_bridge.py", import.meta.url), "utf8"),
+    readFile(new URL("../deploy/relaydesk-listener.service", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(provision, /useradd|groupadd/);
+  assert.match(provision, /\/var\/lib\/relaydesk/);
+  assert.match(provision, /chmod|install/);
+  assert.match(sudoers, /relaydesk/);
+  assert.match(readme, /-L 3000:localhost:3000 -L 8765:localhost:8765/);
+  assert.match(readme, /long polling|long-polling/i);
+  assert.match(readme, /\.env\.local/);
+  assert.match(bridge, /systemctl/);
+  assert.doesNotMatch(bridge, /systemctl", "--user/);
+  assert.match(listenerUnit, /ConditionPathExists=\/var\/lib\/relaydesk\/telegram-user-session\.enc/);
 });

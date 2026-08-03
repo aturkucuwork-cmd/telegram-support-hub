@@ -108,13 +108,14 @@ def restart_managed_services() -> None:
     if os.name == "nt":
         return
     try:
-        subprocess.run(
-            ["sudo", "-n", "systemctl", "try-restart", *MANAGED_SERVICES],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=20,
-        )
+        for service in MANAGED_SERVICES:
+            subprocess.run(
+                ["sudo", "-n", "systemctl", "try-restart", service],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
     except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
         raise SetupError(
             "Ayarlar kaydedildi ancak RelayDesk servisleri yeniden başlatılamadı. "
