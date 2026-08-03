@@ -162,6 +162,27 @@ Ardından yerel tarayıcıda `http://localhost:3000` adresini açın. Telegram k
 
 Bootstrap yalnızca localhost'a bağlı `/api/healthz` endpoint'ini kontrol eder. Panel durumunu veren `/api/status` anonim değildir ve auth gerektirir. History sync, localhost ile sınırlı ve `INTERNAL_API_SECRET` header'ı isteyen `/api/internal/status` endpoint'ini kullanır; bu nedenle status adımında 401 ile kesilmez.
 
+### Yerel SQLite backup ve restore
+
+SQLite WAL modunda çalıştığı için ana dosyayı `cp` ile kopyalamayın. Provision, her gün çalışan `relaydesk-backup.timer`'ı kurar. `backup-relaydesk.sh`, SQLite Python online backup API'sini kullanır, hedefte `PRAGMA integrity_check` çalıştırır ve varsayılan olarak `/var/lib/relaydesk/backup` altında 14 gün retention uygular:
+
+```bash
+sudo systemctl status relaydesk-backup.timer
+sudo systemctl start relaydesk-backup.service
+sudo journalctl -u relaydesk-backup.service
+```
+
+Restore yalnızca doğrulanmış bir backup dosyasıyla ve uygulama servislerini kısa süre durdurarak yapılır; script mevcut veritabanını restore öncesi online backup ile korur, kaynak ve hedef integrity kontrolünü uygular:
+
+```bash
+sudo /opt/relaydesk/deploy/restore-relaydesk.sh \
+  /var/lib/relaydesk/backup/relaydesk-<timestamp>.sqlite
+```
+
+Restore smoke testi: yazma devam ederken `relaydesk-backup.service` çalıştırın, backup dosyasında `PRAGMA integrity_check` sonucunu `ok` doğrulayın, ayrı geçici bir Linux hostta dosyayı read-only açıp tablo/kayıt sayısını karşılaştırın ve web servislerini başlatın. Bu Windows çalışma alanında gerçek WAL yazma/restore ve systemd testi çalıştırılamadı. Bu turda gerçek off-host provider seçilmedi; **TODO:** backup dosyalarını şifreli biçimde ayrı hosta/depoya kopyalama ve düzenli ayrı-host restore tatbikatı.
+
+Secret/session politikası: SQLite backup'ı token veya Fernet anahtarını içermez. `/opt/relaydesk/.env.local` ve `/var/lib/relaydesk/telegram-user-session.enc` ayrı olarak 600 izinle, yalnızca `relaydesk` erişimiyle korunmalıdır. Uygulama verisiyle birlikte secret/session yedeği alınacaksa kopya şifrelenmeli; Fernet anahtarı olmadan session geri yüklenemez. Anahtar kurtarma prosedürü: secret yedeğini güvenli kanaldan geri koyun, sahiplik/izinleri düzeltin, sonra web/poller/listener servislerini restart edin.
+
 ### DPAPI → Fernet geçişi (tek seferlik yeniden giriş)
 
 Eski Windows `.telegram-user-session.dpapi` dosyaları Linux'ta çalışmaz ve otomatik göç edilmez. Yeni dosya `.telegram-user-session.enc` olduğundan Linux sunucusunda Telegram hesabına bir kez daha giriş yapmanız gerekir.

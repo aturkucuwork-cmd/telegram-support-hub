@@ -1,0 +1,14 @@
+[Unit]
+Description=RelayDesk SQLite online backup
+After=relaydesk-web.service
+
+[Service]
+Type=oneshot
+User=relaydesk
+WorkingDirectory=/opt/relaydesk
+EnvironmentFile=/opt/relaydesk/.env.local
+ExecStart=/opt/relaydesk/deploy/backup-relaydesk.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ReadWritePaths=/var/lib/relaydesk

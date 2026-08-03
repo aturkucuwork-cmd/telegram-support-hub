@@ -85,6 +85,8 @@ install -o root -g root -m 0644 "$project_root/deploy/relaydesk-web.service" /et
 install -o root -g root -m 0644 "$project_root/deploy/relaydesk-telegram-poller.service" /etc/systemd/system/relaydesk-telegram-poller.service
 install -o root -g root -m 0644 "$project_root/deploy/relaydesk-listener.service" /etc/systemd/system/relaydesk-listener.service
 install -o root -g root -m 0644 "$project_root/deploy/relaydesk-setup-bridge.service" /etc/systemd/system/relaydesk-setup-bridge.service
+install -o root -g root -m 0644 "$project_root/deploy/relaydesk-backup.service" /etc/systemd/system/relaydesk-backup.service
+install -o root -g root -m 0644 "$project_root/deploy/relaydesk-backup.timer" /etc/systemd/system/relaydesk-backup.timer
 install -o root -g root -m 0440 "$project_root/deploy/relaydesk-sudoers" /etc/sudoers.d/relaydesk
 
 if command -v visudo >/dev/null 2>&1; then
@@ -92,7 +94,8 @@ if command -v visudo >/dev/null 2>&1; then
 fi
 systemctl daemon-reload
 systemctl enable relaydesk-web.service relaydesk-telegram-poller.service relaydesk-listener.service
-systemd-analyze verify relaydesk-web.service relaydesk-telegram-poller.service relaydesk-listener.service relaydesk-setup-bridge.service
+systemctl enable --now relaydesk-backup.timer
+systemd-analyze verify relaydesk-web.service relaydesk-telegram-poller.service relaydesk-listener.service relaydesk-setup-bridge.service relaydesk-backup.service relaydesk-backup.timer
 
 echo "RelayDesk host provision tamamlandı."
 echo "Env: $env_path (600), veri: $data_root (750), session: $session_path (600 hedefi)"

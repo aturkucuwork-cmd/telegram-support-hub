@@ -130,3 +130,22 @@ test("P0 fresh-host provisioning and remote setup bridge are documented", async 
   assert.doesNotMatch(bridge, /systemctl", "--user/);
   assert.match(listenerUnit, /ConditionPathExists=\/var\/lib\/relaydesk\/telegram-user-session\.enc/);
 });
+
+test("P0 backup and restore use SQLite online backup with integrity checks", async () => {
+  const [backup, restore, service, timer, readme] = await Promise.all([
+    readFile(new URL("../deploy/backup-relaydesk.sh", import.meta.url), "utf8"),
+    readFile(new URL("../deploy/restore-relaydesk.sh", import.meta.url), "utf8"),
+    readFile(new URL("../deploy/relaydesk-backup.service", import.meta.url), "utf8"),
+    readFile(new URL("../deploy/relaydesk-backup.timer", import.meta.url), "utf8"),
+    readFile(new URL("../README.md", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(backup, /backup|sqlite/i);
+  assert.match(backup, /\.backup\(|PRAGMA integrity_check/);
+  assert.match(backup, /retention|mtime/i);
+  assert.match(restore, /PRAGMA integrity_check/);
+  assert.match(service, /Type=oneshot/);
+  assert.match(timer, /OnCalendar/);
+  assert.match(readme, /WAL|online backup/i);
+  assert.match(readme, /restore|geri yük/i);
+});
