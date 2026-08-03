@@ -9,20 +9,20 @@
     "dev": "vinext dev --hostname 0.0.0.0",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "npm run build && node --test tests/rendered-html.test.mjs && python -m unittest discover -s tests -p \"test_*.py\"",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.2",
     "drizzle-orm": "0.45.2",
     "next": "16.2.6",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.37.1",
-    "@cloudflare/workers-types": "^4.20260702.1",
     "@tailwindcss/postcss": "4.2.1",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
@@ -35,8 +35,7 @@
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "vinext": "0.0.50",
-    "vite": "8.0.13",
-    "wrangler": "4.92.0"
+    "vite": "8.0.13"
   },
   "type": "module"
 }

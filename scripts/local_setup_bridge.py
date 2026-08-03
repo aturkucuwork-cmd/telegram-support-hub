@@ -110,7 +110,7 @@ def restart_managed_services() -> None:
     try:
         for service in MANAGED_SERVICES:
             subprocess.run(
-                ["sudo", "-n", "systemctl", "try-restart", service],
+                ["sudo", "-n", "systemctl", "restart", service],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -123,7 +123,6 @@ def restart_managed_services() -> None:
             status=503,
             code="service_restart_failed",
         ) from error
-    temporary.replace(ENV_PATH)
 
 
 def load_state() -> dict[str, Any]:
