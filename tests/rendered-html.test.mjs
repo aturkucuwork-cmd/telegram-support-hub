@@ -149,3 +149,17 @@ test("P0 backup and restore use SQLite online backup with integrity checks", asy
   assert.match(readme, /WAL|online backup/i);
   assert.match(readme, /restore|geri yük/i);
 });
+
+test("P0 restore fails closed around service state and SQLite sidecars", async () => {
+  const restore = await readFile(new URL("../deploy/restore-relaydesk.sh", import.meta.url), "utf8");
+
+  assert.match(restore, /systemctl show/);
+  assert.match(restore, /systemctl is-active --quiet/);
+  assert.match(restore, /systemctl start/);
+  assert.match(restore, /-wal/);
+  assert.match(restore, /-shm/);
+  assert.match(restore, /PRAGMA integrity_check/);
+  assert.match(restore, /SELECT COUNT\(\*\)/);
+  assert.match(restore, /api\/healthz/);
+  assert.doesNotMatch(restore, /\|\| true/);
+});
