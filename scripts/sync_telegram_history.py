@@ -22,7 +22,7 @@ truststore.inject_into_ssl()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = PROJECT_ROOT / ".env.local"
-STATUS_URL = "http://localhost:3000/api/status"
+STATUS_URL = "http://localhost:3000/api/internal/status"
 IMPORT_URL = "http://localhost:3000/api/telegram/import"
 STATUS_PATH = PROJECT_ROOT / ".sync-status.json"
 BATCH_SIZE = 100
@@ -98,6 +98,7 @@ def request_json(
     *,
     payload: dict[str, Any] | None = None,
     webhook_secret: str | None = None,
+    internal_secret: str | None = None,
 ) -> dict[str, Any]:
     headers = {"Accept": "application/json"}
     data = None
@@ -108,6 +109,8 @@ def request_json(
         method = "POST"
     if webhook_secret:
         headers["X-Telegram-Bot-Api-Secret-Token"] = webhook_secret
+    if internal_secret:
+        headers["X-RelayDesk-Internal-Secret"] = internal_secret
 
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
@@ -308,10 +311,13 @@ async def sync_history() -> int:
     write_status("starting")
     env = load_env(ENV_PATH)
     webhook_secret = env.get("TELEGRAM_WEBHOOK_SECRET", "")
+    internal_secret = env.get("INTERNAL_API_SECRET", "")
     if not webhook_secret:
         raise RuntimeError(".env.local içinde webhook gizli anahtarı eksik.")
+    if not internal_secret:
+        raise RuntimeError(".env.local içinde internal API gizli anahtarı eksik.")
 
-    status = request_json(STATUS_URL)
+    status = request_json(STATUS_URL, internal_secret=internal_secret)
     connection = status.get("connection") or {}
     connection_id = connection.get("id")
     if not status.get("connected") or not connection_id:

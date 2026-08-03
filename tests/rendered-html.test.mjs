@@ -3,7 +3,7 @@ import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("builds the RelayDesk support application", async () => {
-  const [page, desk, setupWizard, localSetupApi, localSetupBridge, messageLogPanel, messageLogApi, folderPanel, folderApi, folderAssignments, userListener, reply, mediaReply, webhook, configure, status, worker] = await Promise.all([
+  const [page, desk, setupWizard, localSetupApi, localSetupBridge, messageLogPanel, messageLogApi, folderPanel, folderApi, folderAssignments, userListener, reply, mediaReply, webhook, configure, status, statusLogic, worker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/support-desk.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/setup-wizard.tsx", import.meta.url), "utf8"),
@@ -20,6 +20,7 @@ test("builds the RelayDesk support application", async () => {
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/telegram/configure/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/status/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/status.ts", import.meta.url), "utf8"),
     access(new URL("../dist/server/index.js", import.meta.url)),
   ]);
 
@@ -64,8 +65,8 @@ test("builds the RelayDesk support application", async () => {
   assert.match(webhook, /edited_channel_post/);
   assert.match(webhook, /delete\(webhookUpdates\)/);
   assert.match(configure, /channel_post/);
-  assert.match(status, /groupMessageAccess/);
-  assert.match(status, /userGroupListener/);
+  assert.match(statusLogic, /groupMessageAccess/);
+  assert.match(statusLogic, /userGroupListener/);
   assert.match(desk, /Takip edilen grup akışı bekleniyor/);
   assert.equal(worker, undefined);
 });
@@ -88,5 +89,24 @@ test("P0 Linux services use one env source and start Bot API polling", async () 
   assert.match(pollerUnit, /Restart=on-failure/);
   assert.match(bootstrap, /relaydesk-telegram-poller\.service/);
   assert.doesNotMatch(bootstrap, /systemctl --user/);
+  assert.match(envExample, /INTERNAL_API_SECRET=/);
+});
+
+test("P0 readiness and history status keep authenticated status private", async () => {
+  const [healthz, internalStatus, status, history, envExample] = await Promise.all([
+    readFile(new URL("../app/api/healthz/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/internal/status/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/status/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/sync_telegram_history.py", import.meta.url), "utf8"),
+    readFile(new URL("../.env.example", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(healthz, /api\/healthz|ready/);
+  assert.match(internalStatus, /INTERNAL_API_SECRET/);
+  assert.match(internalStatus, /localhost|127\.0\.0\.1/);
+  assert.match(history, /INTERNAL_API_SECRET/);
+  assert.match(history, /X-RelayDesk-Internal-Secret/);
+  assert.match(status, /requireActor/);
+  assert.doesNotMatch(status, /export async function healthz/);
   assert.match(envExample, /INTERNAL_API_SECRET=/);
 });
