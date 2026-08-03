@@ -13,7 +13,11 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-trap 'rm -rf -- "$tmp_root"' EXIT
+tmp_root="$(mktemp -d)"
+cleanup() {
+  rm -rf -- "$tmp_root"
+}
+trap cleanup EXIT
 
 source_path="$tmp_root/source.sqlite"
 destination_path="$tmp_root/destination.sqlite"
@@ -57,9 +61,9 @@ service_index() {
   return 1
 }
 set_state() {
-  local index="$1"
+  local service_number="$1"
   local value="$2"
-  awk -v index="$index" -v value="$value" 'NR == index + 1 {$0 = value} {print}' "$state_path" > "$state_path.tmp"
+  awk -v service_number="$service_number" -v value="$value" 'NR == service_number + 1 {$0 = value} {print}' "$state_path" > "$state_path.tmp"
   mv "$state_path.tmp" "$state_path"
 }
 get_state() {
