@@ -41,9 +41,11 @@ tags: [progress, relaydesk]
 - Selim bağımsız P0 QA/security/a11y review'ını tamamladı; setup wizard restart bug'ı, inactive poller start akışı, restore servis/WAL riskleri ve eksik Linux E2E kanıtı nedeniyle `ai-memory/review/qa.md` BLOCKED olarak yazıldı.
 - P0 QA fix loop tamamlandı: bridge NameError/2xx regression, failed poller restart modeli/allowlist ve fail-closed WAL/SHM restore servis recovery düzeltildi; checkpoint commitleri `38b119e` ve `f111484`.
 - Fix doğrulaması build/test/lint/typecheck/Python/shell syntax ve local HTTP smoke ile geçti; Linux systemd/Telegram/WAL gerçek E2E kanıtı Windows ortamı nedeniyle açık kaldı.
+- 2026-08-03: FIX-05 uygulandı; `tmp_root`/cleanup trap ve Ubuntu awk uyumluluğu düzeltildi. WSL Ubuntu harness PASS verdi; web readiness, stop failure, start failure, readiness failure ve WAL/SHM akışları doğrulandı. Checkpoint'ler `1b4d2ee`, `0050bf8`.
 
 ## Güncel blokajlar
 
-- Gerçek Linux systemd/fresh-host/Telegram/WAL restore E2E doğrulaması bu Windows ortamında yapılamadı; P0 kodu review'a hazır, saha retest'i bekliyor.
+- Gerçek Linux systemd/fresh-host/Telegram/WAL restore E2E doğrulaması bu Windows ortamında yapılamadı; WSL fake-systemctl harness'ı geçti, gerçek saha retesti bekliyor.
 - P0 CRITICAL-05 evidence gate açık: Selim’in Linux saha retest’i olmadan production delivery yapılmayacak.
+- FIX-05 harness başlatma bulgusu kapandı; gerçek systemd/fresh-host/Telegram/WAL evidence gate açık.
 - P1/P2/P3 paketleri bilinçli olarak başlatılmadı.

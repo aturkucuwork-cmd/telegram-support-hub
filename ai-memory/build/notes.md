@@ -156,6 +156,60 @@ Kurulum sihirbazına erişim: `ssh -L 3000:localhost:3000 kullanici@sunucu` ile 
 
 STATUS: READY_FOR_REVIEW
 
+## P0 QA FIX-05 — restore harness — 2026-08-03
+
+### Acceptance criteria status
+
+- **FIX-01 bridge NameError / `/bot-config` 2xx:** **MET** önceki loop doğrulamasıyla; bu turda CRITICAL-01 koduna dokunulmadı.
+- **FIX-02 failed/inactive poller restart:** **MET** önceki loop doğrulamasıyla; bu turda CRITICAL-02 koduna dokunulmadı.
+- **FIX-03 restore recovery/readiness:** **MET (harness kapsamı + kod kontratı); gerçek systemd PARTIAL.** Web active/readiness, stop failure ve start failure dalları harness'ta çalıştırıldı.
+- **FIX-04 WAL/SHM restore safety:** **MET (harness runtime).** `-wal` ve `-shm` yan dosyaları, integrity check ve restored kayıt değeri doğrulandı.
+- **FIX-05 restore harness start/cleanup:** **MET (WSL Ubuntu).** `set -u` uyumlu `mktemp -d` ve cleanup trap ile harness Linux'ta final PASS verdi.
+- **CRITICAL-05 Linux evidence gate:** **PARTIAL / BLOCKED.** WSL fake-systemctl kanıtı gerçek systemd/fresh-host/Telegram/concurrent-WAL/ayrı-host kanıtının yerine geçmez.
+
+### Verification commands
+
+| Komut | Sonuç |
+|---|---|
+| `wsl.exe -d Ubuntu -- bash -lc '... bash tests/restore-relaydesk.integration.sh'` pre-fix | **RED** — `tmp_root` unbound variable. |
+| Aynı WSL harness komutu post-fix | **GREEN** — final `PASS`; success + web readiness + stop failure + start failure + readiness failure + WAL/SHM. |
+| `bash -n deploy/*.sh tests/restore-relaydesk.integration.sh` | **OK** Git Bash ve WSL Ubuntu. |
+| Windows `bash tests/restore-relaydesk.integration.sh` | **NOT RUN** — Linux-only guard. |
+| `npm test` | **OK** — build + 6/6 Node + 1/1 Python. |
+| `npm run lint` | **OK**. |
+| `npx tsc --noEmit` | **OK**. |
+| `python -m unittest discover -s tests -p "test_p0_fix.py"` | **OK** — 1 test. |
+| `python -m py_compile ...` | **OK**. |
+| `npm run start` + `GET /` | **OK** — HTTP 200. |
+
+### Smoke test
+
+Windows production start smoke `GET http://127.0.0.1:3101/` → **HTTP 200**. Linux restore harness smoke WSL Ubuntu'da final `PASS`.
+
+### Changed files — FIX-05
+
+- `tests/restore-relaydesk.integration.sh`
+- `ai-memory/build/fix-notes.md`
+- `ai-memory/build/notes.md`
+- `ai-memory/progress.md`
+- `ai-memory/tasks.md`
+
+### Known gaps
+
+- Gerçek systemd unit state transition, `systemd-analyze`, fresh Linux provision, gerçek Telegram `getUpdates` → SQLite, concurrent live WAL writer ve ayrı-host restore **NOT RUN**.
+- Windows'ta Linux runtime çalıştırılmadı; WSL Ubuntu mevcut olduğu için Linux-only fake-systemctl harness çalıştırıldı. Harness sonucu gerçek systemd evidence değildir.
+- CRITICAL-01..04 kod tarafına yeniden dokunulmadı; P1/P2/P3 başlatılmadı.
+
+### Kurulum/çalıştırma talimatları
+
+Linux root ortamında: `bash tests/restore-relaydesk.integration.sh`. Windows'ta test bilinçli olarak `NOT RUN` döner; Linux kanıtı için WSL Ubuntu veya gerçek Debian/Ubuntu host gerekir. Uygulama smoke: `npm run build && npm run start`.
+
+### Teslim durumu
+
+FIX-05 değişikliği review'a hazır; Linux evidence gate nedeniyle production teslimi **BLOCKED**.
+
+STATUS: BLOCKED
+
 ## P0 remediation build turu — 2026-08-03
 
 Kullanıcı onayı sonrası yalnızca P0 paketleri uygulandı. P1/P2/P3 başlatılmadı. `backup/2026-08-03-before-remediation/` değiştirilmedi ve gerçek secret stage edilmedi.
@@ -226,4 +280,8 @@ Fresh Debian/Ubuntu hostta `/opt/relaydesk` altına kopyaladıktan sonra `sudo b
 - Public `/api/status` auth'suz açılmadı. Bootstrap için localhost `/api/healthz`, history için localhost + `INTERNAL_API_SECRET` `/api/internal/status` seçildi.
 - MTProto session yolu `RELAYDESK_SESSION_PATH` ile `/var/lib/relaydesk` altına taşınabilir hale getirildi; mevcut Windows fallback'i korundu.
 
-STATUS: READY_FOR_REVIEW
+## Final FIX-05 delivery boundary
+
+FIX-05 harness fix and all available checks are complete; `1b4d2ee` and `0050bf8` are the checkpoints. Linux fake-systemctl evidence is present, but real systemd/fresh-host/Telegram/WAL field evidence is still missing. Production delivery remains BLOCKED.
+
+STATUS: BLOCKED

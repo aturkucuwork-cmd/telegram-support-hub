@@ -21,6 +21,7 @@ tags: [tasks, relaydesk]
 - [x] P0 remediation bağımsız QA/security/a11y review'ını tamamla (kritik fix loop bekliyor)
 - [x] P0 QA kritik fixlerini uygula: bridge NameError, poller restart, restore servisleri, WAL/SHM (Linux E2E retest bekliyor)
 - [ ] P0 fresh Linux/systemd/Telegram/WAL restore E2E retestini çalıştır
+- [x] Restore integration harness `tmp_root` setup'ını düzelt ve Linux failure/readiness/WAL testlerini çalıştır (WSL fake-systemctl PASS; gerçek systemd evidence bekliyor)
 - [ ] P1 remediation paketlerini uygula: auth, internal API, secrets, systemd hardening, monitoring
 - [ ] P2 remediation paketlerini kullanıcı onayı sonrası uygula: durable queue, reply outbox, pagination/polling
 - [ ] P3 kalite paketini uygula: test, CI, A11y, security headers ve dokümantasyon

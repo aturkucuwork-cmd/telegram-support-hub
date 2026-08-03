@@ -50,3 +50,52 @@ Gerçek Linux fresh-host provision, `systemd-analyze verify/security`, reboot, T
 - P1/P2/P3 başlatılmadı.
 
 STATUS: BLOCKED
+
+## FIX-05 — Restore integration harness retest — 2026-08-03
+
+### Acceptance criteria status
+
+- **FIX-01 — bridge NameError / `/bot-config` 2xx:** **MET (önceki fix, bu turda dokunulmadı).**
+- **FIX-02 — failed/inactive poller restart:** **MET (önceki fix, bu turda dokunulmadı).**
+- **FIX-03 — restore service recovery/readiness:** **MET (kod kontratı; gerçek systemd evidence hâlâ açık).** Bu harness web active/readiness, stop failure ve start failure dallarını çalıştırıyor.
+- **FIX-04 — WAL/SHM güvenliği ve integrity/smoke:** **MET (harness runtime).** Başarı akışı hem `-wal` hem `-shm` sidecar izolasyonunu, restore integrity ve kayıt değerini doğruluyor.
+- **FIX-05 — Linux restore harness başlatılabilirliği:** **MET (WSL Ubuntu Linux runtime).** `mktemp -d` temp root ve `set -u` uyumlu cleanup trap eklendi; harness PASS ile tamamlandı.
+- **Linux production evidence gate:** **BLOCKED/PARTIAL.** WSL üzerinde fake `systemctl` ile harness çalıştı; gerçek fresh Debian/Ubuntu systemd, servis birimleri, Telegram API, concurrent WAL writer ve ayrı-host restore bu Windows makinesinde doğrulanmadı.
+
+### Kritik kapsam sınırı
+
+CRITICAL-01..04 production koduna yeniden dokunulmadı. Değişiklik yalnızca `tests/restore-relaydesk.integration.sh` ve bu fix dokümantasyonundadır.
+
+### FIX-05 düzeltmesi ve kanıt
+
+- `tmp_root="$(mktemp -d)"` artık `set -u` altında tüm geçici yollar kullanılmadan önce oluşturuluyor.
+- Cleanup, tanımlı kök üzerinde `trap cleanup EXIT` ile yapılıyor.
+- Ubuntu/gawk uyumluluğu için fake `systemctl` içindeki `awk` değişkeni ayrılmış `index` adından çıkarıldı.
+- Mevcut başarı akışına web active/readiness ve hem WAL hem SHM sidecar doğrulaması eklendi.
+- Aynı fake-systemctl akışı içinde stop failure, start failure ve readiness failure negatif senaryoları kontrollü olarak çalıştırıldı; beklenen non-zero sonuçlar doğrulandı.
+
+### Doğrulama
+
+| Komut | Sonuç |
+|---|---|
+| `wsl.exe -d Ubuntu -- ... bash tests/restore-relaydesk.integration.sh` (FIX-05 öncesi) | **RED** — `tmp_root: unbound variable`; trap de aynı nedenle kırıldı. |
+| `wsl.exe -d Ubuntu -- ... bash tests/restore-relaydesk.integration.sh` (FIX-05 sonrası) | **GREEN** — restore integrity, WAL/SHM isolation, web readiness, stop/start failure ve readiness failure akışları; final `PASS`. |
+| `bash -n deploy/*.sh tests/restore-relaydesk.integration.sh` (Git Bash + WSL Ubuntu) | **OK**. |
+| `bash tests/restore-relaydesk.integration.sh` (Windows Git Bash) | **NOT RUN** — harness Linux/systemd semantics gerektirdiği için bilinçli `NOT RUN` döndü. |
+| `npm test` | **OK** — build, 6/6 Node testi ve 1/1 Python testi geçti. |
+| `npm run lint` | **OK**. |
+| `npx tsc --noEmit` | **OK**. |
+| `python -m unittest discover -s tests -p "test_p0_fix.py"` | **OK** — 1 test geçti. |
+| `python -m py_compile scripts/local_setup_bridge.py scripts/telegram_long_poll.py scripts/telegram_user_long_poll.py scripts/telegram_user_session.py scripts/configure_telegram_user_listener.py` | **OK**. |
+| `npm run start` + `GET http://127.0.0.1:3101/` | **OK** — HTTP 200. |
+
+### Git checkpoints
+
+- `1b4d2ee` — temp root/cleanup ve Ubuntu awk uyumluluğu.
+- `0050bf8` — web readiness, stop/start failure ve readiness failure harness senaryoları.
+
+### Kalan blokaj
+
+FIX-05 build düzeltmesi review'a hazırdır; ancak fake systemctl harness'ı gerçek systemd kanıtı değildir. Fresh Linux/systemd/Telegram/WAL saha retesti olmadan genel teslim durumu BLOCKED kalır.
+
+STATUS: READY_FOR_REVIEW
