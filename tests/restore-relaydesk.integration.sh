@@ -14,34 +14,77 @@ fi
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 tmp_root="$(mktemp -d)"
-cleanup() {
-  rm -rf -- "$tmp_root"
-}
-trap cleanup EXIT
-
 source_path="$tmp_root/source.sqlite"
 destination_path="$tmp_root/destination.sqlite"
 backup_root="$tmp_root/backups"
 state_path="$tmp_root/service-state"
 log_path="$tmp_root/systemctl.log"
 fake_bin="$tmp_root/bin"
+writer_ready_path="$tmp_root/writer.ready"
+writer_stop_path="$tmp_root/writer.stop"
+writer_pid=""
+cleanup() {
+  if [ -n "${writer_pid:-}" ]; then
+    : > "$writer_stop_path"
+    wait "$writer_pid" 2>/dev/null || true
+  fi
+  rm -rf -- "$tmp_root"
+}
+trap cleanup EXIT
+
 mkdir -p "$fake_bin"
 
-python3 - "$source_path" "$destination_path" <<'PY'
+python3 - "$source_path" <<'PY'
 import sqlite3
 import sys
 
-source, destination = sys.argv[1:]
-for path, value in ((source, "restored"), (destination, "old")):
-    database = sqlite3.connect(path)
-    database.execute("CREATE TABLE messages (id INTEGER PRIMARY KEY, body TEXT NOT NULL)")
-    database.execute("INSERT INTO messages (body) VALUES (?)", (value,))
-    database.commit()
-    database.close()
+source = sys.argv[1]
+database = sqlite3.connect(source)
+assert database.execute("PRAGMA journal_mode=WAL").fetchone()[0] == "wal"
+database.execute("CREATE TABLE messages (id INTEGER PRIMARY KEY, body TEXT NOT NULL)")
+database.execute("INSERT INTO messages (body) VALUES (?)", ("restored",))
+database.commit()
+assert database.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()[0] == 0
+database.close()
 PY
-printf 'active\nactive\ninactive\n' > "$state_path"
-printf 'stale wal' > "$destination_path-wal"
-printf 'stale shm' > "$destination_path-shm"
+
+python3 - "$destination_path" "$writer_ready_path" "$writer_stop_path" <<'PY' &
+import sqlite3
+import sys
+import time
+from pathlib import Path
+
+destination, ready_path, stop_path = sys.argv[1:]
+database = sqlite3.connect(destination, timeout=30)
+assert database.execute("PRAGMA journal_mode=WAL").fetchone()[0] == "wal"
+database.execute("PRAGMA wal_autocheckpoint=0")
+database.execute("CREATE TABLE messages (id INTEGER PRIMARY KEY, body TEXT NOT NULL)")
+database.execute("INSERT INTO messages (body) VALUES (?)", ("old",))
+database.commit()
+Path(ready_path).touch()
+while not Path(stop_path).exists():
+    time.sleep(0.05)
+database.close()
+PY
+writer_pid=$!
+for _ in $(seq 1 100); do
+  if [ -f "$writer_ready_path" ]; then
+    break
+  fi
+  if ! kill -0 "$writer_pid" 2>/dev/null; then
+    wait "$writer_pid"
+    echo "WAL fixture writer exited before becoming ready" >&2
+    exit 1
+  fi
+  sleep 0.05
+done
+if [ ! -f "$writer_ready_path" ] || [ ! -f "$destination_path-wal" ] || [ ! -f "$destination_path-shm" ]; then
+  echo "WAL fixture did not produce real SQLite -wal/-shm files" >&2
+  exit 1
+fi
+wal_sha256="$(sha256sum "$destination_path-wal" | awk '{print $1}')"
+shm_size="$(stat -c '%s' "$destination_path-shm")"
+printf 'active\nactive\nactive\n' > "$state_path"
 
 cat > "$fake_bin/systemctl" <<'SH'
 #!/usr/bin/env bash
@@ -147,6 +190,7 @@ chmod 0755 "$fake_bin/sleep"
 
 prepare_case() {
   local case_name="$1"
+  local listener_state="${2:-active}"
   local case_root="$tmp_root/$case_name"
   mkdir -p "$case_root"
   case_source="$case_root/source.sqlite"
@@ -162,12 +206,14 @@ import sys
 source, destination = sys.argv[1:]
 for path, value in ((source, "restored"), (destination, "old")):
     database = sqlite3.connect(path)
+    assert database.execute("PRAGMA journal_mode=WAL").fetchone()[0] == "wal"
     database.execute("CREATE TABLE messages (id INTEGER PRIMARY KEY, body TEXT NOT NULL)")
     database.execute("INSERT INTO messages (body) VALUES (?)", (value,))
     database.commit()
+    database.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     database.close()
 PY
-  printf 'active\nactive\ninactive\n' > "$case_state"
+  printf 'active\nactive\n%s\n' "$listener_state" > "$case_state"
 }
 
 run_case() {
@@ -210,17 +256,40 @@ if [ "$(sed -n '1p' "$state_path")" != "active" ] || [ "$(sed -n '2p' "$state_pa
   echo "Previously active services were not restored to active" >&2
   exit 1
 fi
-if [ "$(sed -n '3p' "$state_path")" != "inactive" ]; then
-  echo "Previously inactive listener was unexpectedly started" >&2
+if [ "$(sed -n '3p' "$state_path")" != "active" ]; then
+  echo "Previously active listener was not restored to active" >&2
   exit 1
 fi
-if ! grep -q '^stop relaydesk-telegram-poller.service$' "$log_path" || \
-    ! grep -q '^start relaydesk-telegram-poller.service$' "$log_path"; then
-  echo "Poller stop/start transition was not observed" >&2
+expected_log=$'stop relaydesk-web.service\nstop relaydesk-telegram-poller.service\nstop relaydesk-listener.service\nstart relaydesk-web.service\nstart relaydesk-telegram-poller.service\nstart relaydesk-listener.service'
+if [ "$(cat "$log_path")" != "$expected_log" ]; then
+  echo "Active service stop/start order was not preserved" >&2
+  cat "$log_path" >&2
   exit 1
 fi
 if [ ! -s "$tmp_root/curl.log" ]; then
   echo "Active web readiness check was not observed" >&2
+  exit 1
+fi
+
+sidecar_backup_dir="$(find "$(dirname "$destination_path")" -mindepth 1 -maxdepth 1 -type d -name 'destination.sqlite.restore-sidecars-*' -print -quit)"
+if [ -z "$sidecar_backup_dir" ]; then
+  echo "Restore sidecar backup directory was not created" >&2
+  exit 1
+fi
+expected_sidecar_names=$'destination.sqlite-shm\ndestination.sqlite-wal'
+if [ "$(find "$sidecar_backup_dir" -mindepth 1 -maxdepth 1 -type f -printf '%f\n' | sort)" != "$expected_sidecar_names" ]; then
+  echo "Restore sidecar backup file names were not preserved" >&2
+  find "$sidecar_backup_dir" -mindepth 1 -maxdepth 1 -type f -printf '%f\n' >&2
+  exit 1
+fi
+actual_wal_sha256="$(sha256sum "$sidecar_backup_dir/destination.sqlite-wal" | awk '{print $1}')"
+actual_shm_size="$(stat -c '%s' "$sidecar_backup_dir/destination.sqlite-shm")"
+if [ "$actual_wal_sha256" != "$wal_sha256" ] || \
+   [ "$actual_shm_size" != "$shm_size" ] || \
+   [ ! -s "$sidecar_backup_dir/destination.sqlite-shm" ]; then
+  echo "Restore sidecar backup contents were not preserved" >&2
+  echo "expected wal=$wal_sha256 shm_size=$shm_size" >&2
+  echo "actual wal=$actual_wal_sha256 shm_size=$actual_shm_size" >&2
   exit 1
 fi
 
@@ -231,32 +300,48 @@ import sys
 database = sqlite3.connect(sys.argv[1])
 try:
     assert database.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    assert database.execute("SELECT COUNT(*) FROM messages").fetchone()[0] == 1
     assert database.execute("SELECT body FROM messages").fetchone()[0] == "restored"
 finally:
     database.close()
 PY
 
+: > "$writer_stop_path"
+wait "$writer_pid"
+writer_pid=""
+if [ -e "$destination_path-wal" ] || [ -e "$destination_path-shm" ]; then
+  echo "Destination retained a SQLite sidecar after the WAL restore" >&2
+  exit 1
+fi
+
 prepare_case stop-failure
 run_case 1 'stop relaydesk-web.service' pass
 if [ "$(sed -n '1p' "$case_state")" != "active" ] || \
-   [ "$(sed -n '2p' "$case_state")" != "active" ]; then
+   [ "$(sed -n '2p' "$case_state")" != "active" ] || \
+   [ "$(sed -n '3p' "$case_state")" != "active" ]; then
   echo "Stop failure did not preserve active service recovery" >&2
   exit 1
 fi
 
-prepare_case start-failure
+prepare_case start-failure active
 run_case 1 'start relaydesk-telegram-poller.service' pass
 if [ "$(sed -n '1p' "$case_state")" != "active" ] || \
-   [ "$(sed -n '2p' "$case_state")" != "inactive" ]; then
-  echo "Start failure did not leave the failed poller inactive" >&2
+   [ "$(sed -n '2p' "$case_state")" != "inactive" ] || \
+   [ "$(sed -n '3p' "$case_state")" != "active" ]; then
+  echo "Start failure did not preserve listener recovery while poller failed" >&2
   exit 1
 fi
 
-prepare_case readiness-failure
+prepare_case readiness-failure inactive
 run_case 1 '' fail
 if [ ! -s "$case_curl_log" ]; then
   echo "Readiness failure path did not execute the web health check" >&2
   exit 1
 fi
+if [ "$(sed -n '3p' "$case_state")" != "inactive" ]; then
+  echo "Previously inactive listener was unexpectedly started" >&2
+  exit 1
+fi
 
-echo "PASS: restore integrity, WAL/SHM isolation, and service-state transition"
+echo "NOT RUN: concurrent live writer/restore and separate-host restore require a real Linux E2E environment."
+echo "PASS: real SQLite WAL fixture, sidecar preservation, integrity/count, and service-state recovery"
