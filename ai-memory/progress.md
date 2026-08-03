@@ -23,6 +23,7 @@ tags: [progress, relaydesk]
 
 - Üretim ortamında `TELEGRAM_BOT_TOKEN` tanımlı görünmüyor; canlı Telegram işlevleri bu değer tamamlanmadan çalışmayabilir.
 - Production teslimi; kritik self-host ve güvenlik bulguları düzeltilip fresh Linux/systemd E2E doğrulaması tamamlanana kadar bloklu.
+- P0 QA review'unda dört kritik regresyon bulundu; Mert fix turu açıldı (`ai-memory/build/fix-brief.md`).
 
 ## Sonraki adımlar
 
@@ -37,8 +38,12 @@ tags: [progress, relaydesk]
 - P0.1-P0.6 kod paketleri uygulandı: Bot API poller, tek env, system-level fresh-host provision, iki-port bridge dokümantasyonu, health/internal status ve SQLite backup/restore.
 - Dört atomik Git checkpoint oluşturuldu: `286539f`, `cd77ad1`, `d4de01b`, `4d1fa8d`.
 - Build/test/lint/typecheck/Python syntax/shell syntax ve local health/status smoke geçti.
+- Selim bağımsız P0 QA/security/a11y review'ını tamamladı; setup wizard restart bug'ı, inactive poller start akışı, restore servis/WAL riskleri ve eksik Linux E2E kanıtı nedeniyle `ai-memory/review/qa.md` BLOCKED olarak yazıldı.
+- P0 QA fix loop tamamlandı: bridge NameError/2xx regression, failed poller restart modeli/allowlist ve fail-closed WAL/SHM restore servis recovery düzeltildi; checkpoint commitleri `38b119e` ve `f111484`.
+- Fix doğrulaması build/test/lint/typecheck/Python/shell syntax ve local HTTP smoke ile geçti; Linux systemd/Telegram/WAL gerçek E2E kanıtı Windows ortamı nedeniyle açık kaldı.
 
 ## Güncel blokajlar
 
 - Gerçek Linux systemd/fresh-host/Telegram/WAL restore E2E doğrulaması bu Windows ortamında yapılamadı; P0 kodu review'a hazır, saha retest'i bekliyor.
+- P0 CRITICAL-05 evidence gate açık: Selim’in Linux saha retest’i olmadan production delivery yapılmayacak.
 - P1/P2/P3 paketleri bilinçli olarak başlatılmadı.

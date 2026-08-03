@@ -106,6 +106,54 @@ cp deploy/relaydesk-listener.service deploy/relaydesk-setup-bridge.service ~/.co
 ```
 Kurulum sihirbazına erişim: `ssh -L 3000:localhost:3000 kullanici@sunucu` ile tünel açıp `http://localhost:3000`.
 
+## P0 QA critical fix loop — 2026-08-03
+
+### Acceptance criteria status
+
+- **FIX-01 — bridge NameError ve `/bot-config` sonrası 2xx:** **MET (yerel gerçek HTTP test).** Tanımsız replace kaldırıldı; handler üzerinden token kaydı, env güncellemesi, service restart mock’u ve 2xx birlikte doğrulandı.
+- **FIX-02 — boş env/bootstrap sonrası token kaydı ile failed/inactive poller active:** **MET (kod + davranış test doubles); Linux systemd/Telegram E2E PARTIAL.** `restart` inactive/failed unit’i kapsıyor ve sudoers exact allowlist güncellendi. Gerçek systemd ve Bot API `getUpdates` Windows’ta çalıştırılmadı.
+- **FIX-03 — başarılı restore sonrası önceden active servisler ve readiness:** **MET (kod kontratı); Linux runtime PARTIAL.** Active state snapshot, stop doğrulama, fail-closed restart trap ve health/readiness non-zero yolu uygulandı. Gerçek systemd start/readiness Windows’ta çalıştırılmadı.
+- **FIX-04 — WAL/SHM restore güvenliği ve integrity/smoke:** **MET (kod + Linux-only harness hazır); Linux runtime PARTIAL.** Yan dosyalar güvenli restore backup klasörüne taşınıyor, candidate integrity/count/smoke doğrulanıyor. Linux harness Windows’ta NOT RUN.
+- **CRITICAL-05 — P0 evidence gate:** **PARTIAL / BLOCKED.** Fresh Linux provision, systemd security/transition, gerçek Telegram ingestion ve concurrent/ayrı-host WAL restore kanıtı ortam yokluğu nedeniyle alınamadı.
+
+### Verification commands
+
+| Komut | Sonuç |
+|---|---|
+| `python -m unittest discover -s tests -p "test_p0_fix.py"` | **OK**, 1 gerçek bridge HTTP regression testi geçti. |
+| `npm test` | **OK**, build + 6/6 Node test + 1/1 Python HTTP test geçti. |
+| `npm run lint` | **OK**. |
+| `npx tsc --noEmit` | **OK**. |
+| `python -m py_compile ...` | **OK**, ilgili bridge, poller, listener, session, history ve config scriptleri geçti. |
+| `"C:\\Program Files\\Git\\bin\\bash.exe" -n deploy/*.sh tests/restore-relaydesk.integration.sh` | **OK**, Git Bash syntax check. |
+| `"C:\\Program Files\\Git\\bin\\bash.exe" tests/restore-relaydesk.integration.sh` | **NOT RUN**, Windows host; harness Linux gereksinimi bildirdi. |
+| `npm run start` + `GET http://127.0.0.1:3100/` | **OK**, HTTP 200 smoke. |
+| Linux `systemd-analyze`, gerçek systemctl/Telegram/WAL restore | **NOT RUN**, Windows’ta Linux runtime yok. |
+
+### Smoke test
+
+`npm run start` production server başlatıldı; `GET /` HTTP 200 döndü. `/bot-config` gerçek local HTTP handler regression testi de 2xx döndü. Gerçek Telegram ve systemd smoke testi yapılmış gibi raporlanmadı.
+
+### Changed files — fix loop
+
+- `scripts/local_setup_bridge.py`
+- `deploy/relaydesk-sudoers`
+- `deploy/restore-relaydesk.sh`
+- `package.json`
+- `tests/test_p0_fix.py`
+- `tests/rendered-html.test.mjs`
+- `tests/restore-relaydesk.integration.sh`
+- `ai-memory/build/fix-notes.md`
+- `ai-memory/build/notes.md`
+- `ai-memory/progress.md`
+- `ai-memory/tasks.md`
+
+### Known gaps
+
+- Fresh Debian/Ubuntu provision, systemd active/inactive/failed transitions, readiness/health after restore, real Telegram `getUpdates` → SQLite, concurrent live WAL writer/restore and separate-host restore **NOT RUN** on Windows.
+- CRITICAL-05 evidence gate remains open; Selim’s Linux retest is required before production delivery.
+- P1/P2/P3 intentionally untouched.
+
 STATUS: READY_FOR_REVIEW
 
 ## P0 remediation build turu — 2026-08-03
