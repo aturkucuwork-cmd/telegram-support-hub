@@ -42,10 +42,12 @@ tags: [progress, relaydesk]
 - P0 QA fix loop tamamlandı: bridge NameError/2xx regression, failed poller restart modeli/allowlist ve fail-closed WAL/SHM restore servis recovery düzeltildi; checkpoint commitleri `38b119e` ve `f111484`.
 - Fix doğrulaması build/test/lint/typecheck/Python/shell syntax ve local HTTP smoke ile geçti; Linux systemd/Telegram/WAL gerçek E2E kanıtı Windows ortamı nedeniyle açık kaldı.
 - 2026-08-03: FIX-05 uygulandı; `tmp_root`/cleanup trap ve Ubuntu awk uyumluluğu düzeltildi. WSL Ubuntu harness PASS verdi; web readiness, stop failure, start failure, readiness failure ve WAL/SHM akışları doğrulandı. Checkpoint'ler `1b4d2ee`, `0050bf8`.
+- 2026-08-03: FIX-06 uygulandı; restore harness active listener stop/start recovery + exact log order, inactive listener case, gerçek SQLite WAL/SHM fixture, sidecar backup isim/içerik, integrity/count ve destination cleanup assertions ile genişletildi. WSL Ubuntu final PASS; checkpoint `a98b052`.
 
 ## Güncel blokajlar
 
 - Gerçek Linux systemd/fresh-host/Telegram/WAL restore E2E doğrulaması bu Windows ortamında yapılamadı; WSL fake-systemctl harness'ı geçti, gerçek saha retesti bekliyor.
 - P0 CRITICAL-05 evidence gate açık: Selim’in Linux saha retest’i olmadan production delivery yapılmayacak.
 - FIX-05 harness başlatma bulgusu kapandı; gerçek systemd/fresh-host/Telegram/WAL evidence gate açık.
+- FIX-06 MAJOR-01/02 harness kapsamı build düzeyinde kapandı; Selim QA yeniden review’ı ve gerçek Linux concurrent/ayrı-host evidence gate’i açık.
 - P1/P2/P3 paketleri bilinçli olarak başlatılmadı.

@@ -210,6 +210,63 @@ FIX-05 değişikliği review'a hazır; Linux evidence gate nedeniyle production 
 
 STATUS: BLOCKED
 
+## P0 QA FIX-06 — Restore harness kapsamı — 2026-08-03
+
+### Acceptance criteria status
+
+- **MAJOR-01 — active listener restore recovery:** **MET (WSL harness).** Başarı fixture’ı active web + poller + listener ile başlıyor; restore stop/start recovery, final üçlü active state ve exact stop/start log sırası doğrulanıyor. Stop-failure ve start-failure fixture’larında active listener recovery korunuyor. Readiness-failure fixture’ı inactive listener davranışını ayrıca koruyor.
+- **MAJOR-02 — gerçek WAL/sidecar restore kanıtı:** **MET (WSL harness, concurrency hariç).** Sentetik `printf` WAL/SHM kaldırıldı. Gerçek SQLite `journal_mode=WAL` fixture ve kontrollü ayrı Python writer process’i `-wal`/`-shm` üretiyor. Restore sonrası sidecar backup dizini, dosya isimleri, WAL SHA-256, SHM boyut/non-empty içeriği, destination sidecar temizliği, integrity/count/body ve WAL journal mode doğrulanıyor.
+- **Concurrent writer + ayrı-host restore:** **NOT MET / NOT RUN.** Bu görevde production E2E kanıtı olarak açık bırakıldı; WSL fake-systemctl harness bunu kapatmış sayılmıyor.
+- **FIX-01..05:** **Önceki loop kanıtlarıyla MET/PARTIAL**; bu turda production koduna dokunulmadı.
+
+### TDD / incremental evidence
+
+1. Yeni active-listener/log ve gerçek-WAL assertion’ları önce eklendi; mevcut fixture WSL Ubuntu’da **RED** verdi (`Previously active listener was not restored to active`).
+2. Fixture üretimi gerçek SQLite WAL’a ve ayrı kontrollü writer process’ine çevrildi; sidecar backup/name/content, state/log, integrity/count ve inactive listener assertions eklendi.
+3. WSL Ubuntu’da **GREEN** final `PASS` alındı. Stop failure, start failure ve readiness failure negatif senaryoları beklenen non-zero sonuçlarla çalıştı.
+4. Başarılı harness dilimi checkpoint’lendi: `a98b052`.
+
+### Verification commands
+
+| Komut | Sonuç |
+|---|---|
+| `wsl.exe -d Ubuntu -- bash -lc "cd /mnt/c/Users/aturk/telegram-support-hub && bash tests/restore-relaydesk.integration.sh"` (pre-fix assertion run) | **RED** — active listener recovery assertion’ı fail oldu. |
+| Aynı WSL Ubuntu harness komutu (FIX-06 sonrası) | **GREEN** — real WAL/SHM, sidecar preservation, integrity/count, active/inactive listener recovery ve failure cases; final `PASS`. |
+| `wsl.exe -d Ubuntu -- bash -lc "cd /mnt/c/Users/aturk/telegram-support-hub && bash -n deploy/*.sh tests/restore-relaydesk.integration.sh"` | **OK**. |
+| `& "C:\Program Files\Git\bin\bash.exe" -n deploy/*.sh tests/restore-relaydesk.integration.sh` | **OK**. |
+| `& "C:\Program Files\Git\bin\bash.exe" tests/restore-relaydesk.integration.sh` | **NOT RUN** — Windows Linux guard. |
+| `npm test` | **OK** — build + 6/6 Node + 1/1 Python. |
+| `npm run lint` | **OK**. |
+| `npx tsc --noEmit` | **OK**. |
+| `python -m py_compile scripts/local_setup_bridge.py scripts/telegram_long_poll.py scripts/telegram_user_long_poll.py scripts/telegram_user_session.py scripts/configure_telegram_user_listener.py` | **OK**. |
+| `npm run build` + `npm run start` + `GET http://127.0.0.1:3107/` | **OK** — HTTP 200. |
+
+### Smoke test
+
+Production start smoke WSL/Windows hostta değil, Windows Node runtime’da `npm run build` sonrası `npm run start` ile yapıldı; `GET /` **HTTP 200** döndü. Linux restore smoke ise WSL Ubuntu’da harness final `PASS` olarak tamamlandı.
+
+### Changed files
+
+- `tests/restore-relaydesk.integration.sh`
+- `ai-memory/build/fix-notes.md`
+- `ai-memory/build/notes.md`
+- `ai-memory/progress.md`
+- `ai-memory/tasks.md`
+- `ai-memory/memory/session-2026-08-03.md`
+
+### Known gaps
+
+- Gerçek fresh systemd/Telegram/ayrı-host E2E, systemd-analyze, servis sahiplik/izinleri ve concurrent live writer/restore **NOT RUN**. WSL fake-systemctl sonucu production kanıtı değildir.
+- `ai-memory/review/qa.md` bilinçli olarak değiştirilmedi; Selim yeniden review yapacak.
+- Backup ve secret’lara dokunulmadı; P1/P2/P3 kapsam dışı kaldı.
+
+### Kurulum/çalıştırma talimatları
+
+- Linux/WSL harness: `bash tests/restore-relaydesk.integration.sh` (root gerektirir; Windows’ta guard `NOT RUN`).
+- Uygulama: `npm install`, `npm run build`, `npm run start`.
+
+STATUS: READY_FOR_REVIEW
+
 ## P0 remediation build turu — 2026-08-03
 
 Kullanıcı onayı sonrası yalnızca P0 paketleri uygulandı. P1/P2/P3 başlatılmadı. `backup/2026-08-03-before-remediation/` değiştirilmedi ve gerçek secret stage edilmedi.
@@ -285,3 +342,9 @@ Fresh Debian/Ubuntu hostta `/opt/relaydesk` altına kopyaladıktan sonra `sudo b
 FIX-05 harness fix and all available checks are complete; `1b4d2ee` and `0050bf8` are the checkpoints. Linux fake-systemctl evidence is present, but real systemd/fresh-host/Telegram/WAL field evidence is still missing. Production delivery remains BLOCKED.
 
 STATUS: BLOCKED
+
+## FIX-06 final handoff
+
+FIX-06 harness değişikliği `a98b052` checkpoint’inde hazırdır. MAJOR-01/02 harness kabul kontrolleri WSL Ubuntu’da GREEN’dir; gerçek fresh systemd/Telegram/concurrent WAL/ayrı-host kanıtı bu görevle kapanmış sayılmaz.
+
+STATUS: READY_FOR_REVIEW
