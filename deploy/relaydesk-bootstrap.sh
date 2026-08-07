@@ -12,8 +12,14 @@ fi
 echo "RelayDesk sistemleri etkinleştiriliyor..."
 
 systemctl daemon-reload
-systemctl enable --now relaydesk-web.service
-systemctl enable --now relaydesk-telegram-poller.service
+
+# `enable --now` only starts a unit that isn't already running -- on a
+# redeploy (rerunning install.sh after a rebuild) the previous process would
+# otherwise keep serving the old build/code indefinitely. `restart` starts a
+# stopped unit and restarts an already-running one, so every bootstrap run
+# actually picks up the code that was just built.
+systemctl enable relaydesk-web.service relaydesk-telegram-poller.service
+systemctl restart relaydesk-web.service relaydesk-telegram-poller.service
 
 systemctl enable relaydesk-listener.service
 

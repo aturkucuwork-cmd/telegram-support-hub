@@ -97,6 +97,11 @@ test("P0 Linux services use one env source and start Bot API polling", async () 
   assert.match(pollerUnit, /Restart=on-failure/);
   assert.match(bootstrap, /relaydesk-telegram-poller\.service/);
   assert.doesNotMatch(bootstrap, /systemctl --user/);
+  assert.match(
+    bootstrap,
+    /systemctl restart relaydesk-web\.service relaydesk-telegram-poller\.service/,
+    "bootstrap must restart (not just start) already-running units on redeploy, or a rebuild leaves the old process/assets running",
+  );
   assert.match(envExample, /INTERNAL_API_SECRET=/);
 });
 
