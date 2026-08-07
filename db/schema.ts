@@ -98,6 +98,46 @@ export const telegramFolderMembers = sqliteTable(
   ],
 );
 
+export const bots = sqliteTable(
+  "bots",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    label: text("label").notNull(),
+    telegramBotId: text("telegram_bot_id").notNull(),
+    username: text("username"),
+    displayName: text("display_name"),
+    tokenCiphertext: text("token_ciphertext").notNull(),
+    tokenLastFour: text("token_last_four").notNull(),
+    isEnabled: integer("is_enabled", { mode: "boolean" }).notNull().default(true),
+    lastValidatedAt: text("last_validated_at"),
+    lastPollErrorAt: text("last_poll_error_at"),
+    lastPollError: text("last_poll_error"),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("bots_telegram_bot_id_unique").on(table.telegramBotId),
+    index("bots_enabled_idx").on(table.isEnabled),
+  ],
+);
+
+export const botGroupAssignments = sqliteTable(
+  "bot_group_assignments",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    botId: integer("bot_id").notNull(),
+    telegramChatId: text("telegram_chat_id").notNull(),
+    title: text("title"),
+    source: text("source").notNull().default("auto"),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("bot_group_assignments_chat_unique").on(table.telegramChatId),
+    index("bot_group_assignments_bot_idx").on(table.botId),
+  ],
+);
+
 export const conversations = sqliteTable(
   "conversations",
   {
@@ -113,6 +153,7 @@ export const conversations = sqliteTable(
     assignedToEmail: text("assigned_to_email"),
     assignmentSource: text("assignment_source"),
     assignmentFolderId: integer("assignment_folder_id"),
+    botId: integer("bot_id"),
     unreadCount: integer("unread_count").notNull().default(0),
     lastMessage: text("last_message").notNull().default(""),
     lastMessageAt: text("last_message_at").notNull().default(sql`CURRENT_TIMESTAMP`),

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { ensureSchema } from "@/db/ensure";
-import { telegramConnections, webhookUpdates } from "@/db/schema";
+import { bots, telegramConnections, webhookUpdates } from "@/db/schema";
 import {
   BOT_GROUP_CONNECTION_ID,
   markDeletedMessages,
@@ -54,6 +54,24 @@ export async function POST(request: Request) {
 
   await ensureSchema();
   const db = getDb();
+
+  const botIdHeader = request.headers.get("x-relaydesk-bot-id")?.trim();
+  let botId: number | undefined;
+  if (botIdHeader) {
+    if (!/^\d+$/.test(botIdHeader)) {
+      return Response.json({ error: "Geçersiz bot kimliği." }, { status: 400 });
+    }
+    const [bot] = await db
+      .select({ id: bots.id, isEnabled: bots.isEnabled })
+      .from(bots)
+      .where(eq(bots.id, Number(botIdHeader)))
+      .limit(1);
+    if (!bot || !bot.isEnabled) {
+      return Response.json({ error: "Bilinmeyen bot kimliği." }, { status: 404 });
+    }
+    botId = bot.id;
+  }
+
   const inserted = await db
     .insert(webhookUpdates)
     .values({ updateId: update.update_id })
@@ -95,6 +113,7 @@ export async function POST(request: Request) {
         edited: true,
       });
     }
+    const groupConnectionId = botId === undefined ? BOT_GROUP_CONNECTION_ID : undefined;
     if (
       update.message &&
       ["group", "supergroup"].includes(update.message.chat.type)
@@ -102,7 +121,8 @@ export async function POST(request: Request) {
       await storeTelegramMessage({
         message: update.message,
         updateId: update.update_id,
-        connectionId: BOT_GROUP_CONNECTION_ID,
+        connectionId: groupConnectionId,
+        botId,
       });
     }
     if (
@@ -112,7 +132,8 @@ export async function POST(request: Request) {
       await storeTelegramMessage({
         message: update.edited_message,
         updateId: update.update_id,
-        connectionId: BOT_GROUP_CONNECTION_ID,
+        connectionId: groupConnectionId,
+        botId,
         edited: true,
       });
     }
@@ -120,14 +141,16 @@ export async function POST(request: Request) {
       await storeTelegramMessage({
         message: update.channel_post,
         updateId: update.update_id,
-        connectionId: BOT_GROUP_CONNECTION_ID,
+        connectionId: groupConnectionId,
+        botId,
       });
     }
     if (update.edited_channel_post) {
       await storeTelegramMessage({
         message: update.edited_channel_post,
         updateId: update.update_id,
-        connectionId: BOT_GROUP_CONNECTION_ID,
+        connectionId: groupConnectionId,
+        botId,
         edited: true,
       });
     }

@@ -7,6 +7,7 @@ import { AuthCard, TeamPanel } from "./account-ui";
 import { MessageLogPanel } from "./message-log-panel";
 import { SetupWizard } from "./setup-wizard";
 import { FolderRulesPanel } from "./folder-rules-panel";
+import { BotsPanel } from "./bots-panel";
 
 type Filter = "all" | "mine" | "unassigned" | "groups" | "resolved";
 
@@ -100,6 +101,7 @@ export function SupportDesk() {
   const [messageLogsOpen, setMessageLogsOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
   const [folderRulesOpen, setFolderRulesOpen] = useState(false);
+  const [botsOpen, setBotsOpen] = useState(false);
   const [replyTarget, setReplyTarget] = useState<Message | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const setupAutoOpened = useRef(false);
@@ -344,6 +346,7 @@ export function SupportDesk() {
           </span>
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setMessageLogsOpen(true)}>Mesaj logları</button> : null}
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setFolderRulesOpen(true)}>Klasör atamaları</button> : null}
+          {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setBotsOpen(true)}>Botlar</button> : null}
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setSetupOpen(true)}>Kurulum</button> : null}
           {actor?.role === "admin" ? <button className="topbar-team-button" onClick={() => setTeamOpen(true)}>Ekip</button> : null}
           <button className="agent-avatar account-avatar" title={`${actor?.email} · Çıkış yap`} aria-label="Oturumu kapat" onClick={() => void logout()}>{initials(actor?.displayName || "D")}</button>
@@ -384,6 +387,10 @@ export function SupportDesk() {
               <button className="nav-item" onClick={() => setFolderRulesOpen(true)}>
                 <span className="nav-mark">▰</span>
                 <span>Klasör atamaları</span>
+              </button>
+              <button className="nav-item" onClick={() => setBotsOpen(true)}>
+                <span className="nav-mark">◈</span>
+                <span>Botlar</span>
               </button>
               <button className="nav-item" onClick={() => setTeamOpen(true)}>
                 <span className="nav-mark">+</span>
@@ -520,24 +527,29 @@ export function SupportDesk() {
       {teamOpen && actor?.role === "admin" ? <TeamPanel actor={actor} onClose={() => setTeamOpen(false)} /> : null}
       {messageLogsOpen && actor?.role === "admin" ? <MessageLogPanel onClose={() => setMessageLogsOpen(false)} /> : null}
       {folderRulesOpen && actor?.role === "admin" ? <FolderRulesPanel onClose={() => setFolderRulesOpen(false)} /> : null}
+      {botsOpen && actor?.role === "admin" ? <BotsPanel onClose={() => setBotsOpen(false)} /> : null}
       {setupOpen && actor?.role === "admin" ? <SetupWizard status={status} onRefresh={loadStatus} onClose={() => setSetupOpen(false)} /> : null}
     </>
   );
 }
 
+function fileUrl(message: Message): string {
+  return `/api/telegram/file?file_id=${encodeURIComponent(message.fileId!)}&conversation_id=${message.conversationId}`;
+}
+
 function MessageContent({ message }: { message: Message }) {
   if (message.isDeleted) return <p className="deleted-message">Bu mesaj silindi.</p>;
   if (message.contentType === "photo" && message.fileId) {
-    return <div className="message-content"><Image unoptimized width={720} height={480} className="message-photo" src={`/api/telegram/file?file_id=${encodeURIComponent(message.fileId)}`} alt={message.text || "Telegram fotoğrafı"} />{message.text ? <p>{message.text}</p> : null}</div>;
+    return <div className="message-content"><Image unoptimized width={720} height={480} className="message-photo" src={fileUrl(message)} alt={message.text || "Telegram fotoğrafı"} />{message.text ? <p>{message.text}</p> : null}</div>;
   }
   if (message.contentType === "video" && message.fileId) {
-    return <div className="message-content"><video className="message-video" controls preload="metadata" src={`/api/telegram/file?file_id=${encodeURIComponent(message.fileId)}`} />{message.text ? <p>{message.text}</p> : null}</div>;
+    return <div className="message-content"><video className="message-video" controls preload="metadata" src={fileUrl(message)} />{message.text ? <p>{message.text}</p> : null}</div>;
   }
   if (message.contentType === "location") {
     return <a className="attachment-card" href={`https://www.google.com/maps?q=${encodeURIComponent(message.text)}`} target="_blank" rel="noreferrer"><span>⌖</span><div><strong>Konumu aç</strong><small>{message.text}</small></div></a>;
   }
   if (message.fileId) {
-    return <div className="message-content"><a className="attachment-card" href={`/api/telegram/file?file_id=${encodeURIComponent(message.fileId)}`} target="_blank" rel="noreferrer"><span>↓</span><div><strong>{message.fileName || attachmentLabel(message)}</strong><small>{attachmentLabel(message)}</small></div></a>{message.text ? <p>{message.text}</p> : null}</div>;
+    return <div className="message-content"><a className="attachment-card" href={fileUrl(message)} target="_blank" rel="noreferrer"><span>↓</span><div><strong>{message.fileName || attachmentLabel(message)}</strong><small>{attachmentLabel(message)}</small></div></a>{message.text ? <p>{message.text}</p> : null}</div>;
   }
   return <p>{message.text || attachmentLabel(message)}</p>;
 }

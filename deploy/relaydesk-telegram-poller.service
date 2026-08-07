@@ -1,5 +1,5 @@
 [Unit]
-Description=RelayDesk Telegram Bot API long poller
+Description=RelayDesk Telegram Bot API long poller (fans out to every active bot via asyncio in one process)
 After=network-online.target relaydesk-web.service
 Wants=network-online.target
 Requires=relaydesk-web.service

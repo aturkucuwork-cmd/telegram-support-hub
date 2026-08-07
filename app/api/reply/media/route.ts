@@ -3,9 +3,9 @@ import { getDb } from "@/db";
 import { ensureSchema } from "@/db/ensure";
 import { auditLogs, conversations } from "@/db/schema";
 import { isSameOriginRequest, requireActor } from "@/lib/auth";
+import { resolveBotForConversation } from "@/lib/bots";
 import { resolveReplyParameters } from "@/lib/reply";
 import {
-  BOT_GROUP_CONNECTION_ID,
   MT_PROTO_USER_CONNECTION_ID,
   storeTelegramMessage,
 } from "@/lib/store-telegram";
@@ -80,7 +80,19 @@ export async function POST(request: Request) {
   );
   if (replyParameters instanceof Response) return replyParameters;
 
-  const isBotGroup = conversation.connectionId === BOT_GROUP_CONNECTION_ID;
+  const isBotGroup = conversation.botId !== null;
+  let botToken: string | undefined;
+  if (isBotGroup) {
+    const bot = await resolveBotForConversation(conversation);
+    if (!bot) {
+      return Response.json(
+        { error: "Bu grup için etkin bir bot atanmamış." },
+        { status: 409 },
+      );
+    }
+    botToken = bot.token;
+  }
+
   const telegramForm = new FormData();
   telegramForm.set("chat_id", conversation.telegramChatId);
   if (!isBotGroup) {
@@ -101,6 +113,7 @@ export async function POST(request: Request) {
     const message = await telegramMultipartApi<TelegramMessage>(
       isPhoto ? "sendPhoto" : "sendVideo",
       telegramForm,
+      { botToken },
     );
     if (!isBotGroup) message.business_connection_id ??= conversation.connectionId;
     message.message_thread_id ??= conversation.topicId

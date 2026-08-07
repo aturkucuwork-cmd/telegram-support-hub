@@ -1,10 +1,12 @@
 import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
+  botGroupAssignments,
   conversations,
   messages,
   telegramConnections,
 } from "@/db/schema";
+import { botGroupConnectionId, reassignConversationBot } from "@/lib/bots";
 import {
   chatTitle,
   parseContent,
@@ -16,17 +18,79 @@ import { findFolderAssignment } from "@/lib/folder-assignments";
 export const BOT_GROUP_CONNECTION_ID = "__telegram_bot_groups__";
 export const MT_PROTO_USER_CONNECTION_ID = "__telegram_user__";
 
+async function resolveBotGroupAssignment(
+  botId: number,
+  chatId: string,
+  title: string,
+): Promise<{ botId: number; previousBotId: number | null }> {
+  const db = getDb();
+  const [existing] = await db
+    .select()
+    .from(botGroupAssignments)
+    .where(eq(botGroupAssignments.telegramChatId, chatId))
+    .limit(1);
+
+  if (!existing) {
+    const inserted = await db
+      .insert(botGroupAssignments)
+      .values({ botId, telegramChatId: chatId, title, source: "auto" })
+      .onConflictDoNothing()
+      .returning();
+    if (inserted.length) return { botId, previousBotId: null };
+    // Lost the insert race to a concurrent poller for another bot — the row
+    // that actually landed first stays authoritative.
+    const [raced] = await db
+      .select()
+      .from(botGroupAssignments)
+      .where(eq(botGroupAssignments.telegramChatId, chatId))
+      .limit(1);
+    return { botId: raced.botId, previousBotId: null };
+  }
+
+  if (existing.botId === botId) return { botId, previousBotId: null };
+
+  console.warn(
+    `[bot-group-assignment] chat ${chatId} bot ${existing.botId}'den bot ${botId}'e taşındı (çakışma tespit edildi).`,
+  );
+  await db
+    .update(botGroupAssignments)
+    .set({ botId, title, updatedAt: new Date().toISOString() })
+    .where(eq(botGroupAssignments.telegramChatId, chatId));
+  return { botId, previousBotId: existing.botId };
+}
+
 export async function storeTelegramMessage(options: {
   message: TelegramMessage;
   updateId?: number;
   edited?: boolean;
   connectionId?: string;
+  botId?: number;
   outgoing?: boolean;
   historical?: boolean;
 }) {
-  const { message, updateId, edited = false, historical = false } = options;
+  const { message, updateId, edited = false, historical = false, botId } = options;
   const businessConnectionId = message.business_connection_id;
-  const connectionId = options.connectionId ?? businessConnectionId;
+  const chatId = String(message.chat.id);
+  const topicId = message.message_thread_id === undefined
+    ? ""
+    : String(message.message_thread_id);
+
+  let connectionId = options.connectionId ?? businessConnectionId;
+  let resolvedBotId: number | null = null;
+  if (botId !== undefined) {
+    const assignment = await resolveBotGroupAssignment(
+      botId,
+      chatId,
+      chatTitle(message.chat),
+    );
+    resolvedBotId = assignment.botId;
+    connectionId = botGroupConnectionId(assignment.botId);
+    await reassignConversationBot({
+      telegramChatId: chatId,
+      fromBotId: assignment.previousBotId,
+      toBotId: assignment.botId,
+    });
+  }
   if (!connectionId) throw new Error("Telegram bağlantı kimliği eksik.");
 
   const db = getDb();
@@ -44,10 +108,6 @@ export async function storeTelegramMessage(options: {
         )
     : [];
 
-  const chatId = String(message.chat.id);
-  const topicId = message.message_thread_id === undefined
-    ? ""
-    : String(message.message_thread_id);
   const now = new Date().toISOString();
   const sentAt = new Date(message.date * 1000).toISOString();
   const baseTitle = chatTitle(message.chat);
@@ -107,6 +167,7 @@ export async function storeTelegramMessage(options: {
         lastMessage: content.preview,
         lastMessageAt: sentAt,
         unreadCount: outgoing || edited || historical ? 0 : 1,
+        botId: resolvedBotId,
         assignedToEmail: folderAssignment?.email ?? null,
         assignmentSource: folderAssignment ? "telegram_folder" : null,
         assignmentFolderId: folderAssignment?.folderId ?? null,

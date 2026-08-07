@@ -152,7 +152,7 @@ sudo chmod 600 /opt/relaydesk/.env.local
 sudo systemctl restart relaydesk-web.service relaydesk-telegram-poller.service relaydesk-listener.service
 ```
 
-Bot alım modeli bilinçli olarak **webhook değil, Bot API long polling**'dir. Bridge `deleteWebhook(drop_pending_updates=false)` çağırır; `relaydesk-telegram-poller.service` `getUpdates` ile private/business mesajları alır ve yerel `/api/telegram/webhook` route'una iletir. Poller `Restart=on-failure` ve exponential backoff kullanır. `getWebhookInfo`'da URL boş olmalıdır.
+Bot alım modeli bilinçli olarak **webhook değil, Bot API long polling**'dir. Bridge `deleteWebhook(drop_pending_updates=false)` çağırır; `relaydesk-telegram-poller.service` `getUpdates` ile private/business mesajları alır ve yerel `/api/telegram/webhook` route'una iletir. Poller `Restart=on-failure` ve exponential backoff kullanır. `getWebhookInfo`'da URL boş olmalıdır. Panelden birden fazla bot eklendiğinde poller tek process içinde `asyncio` ile her aktif bot için ayrı bir `getUpdates` döngüsü çalıştırır ve her güncellemeyi hangi bottan geldiğini belirten `X-RelayDesk-Bot-Id` header'ıyla iletir; bot listesi `/api/internal/bots` üzerinden 60 saniyede bir yenilenir.
 
 `SESSION_ENCRYPTION_KEY` Fernet anahtarı, `INTERNAL_API_SECRET` ve `LOCAL_SETUP_TOKEN` gerçek secret'lardır: `/opt/relaydesk/.env.local` yalnızca `relaydesk` tarafından okunabilir (`chmod 600`) ve secret rotasyonunda ilgili servisler restart edilmelidir. Şifreli MTProto session `/var/lib/relaydesk/telegram-user-session.enc` altında tutulur; session ve anahtar birlikte korunmadan restore edilemez.
 
@@ -222,6 +222,7 @@ npm run build
 | `SUPPORT_ALLOWED_EMAILS` | Panele girebilecek virgülle ayrılmış e-posta listesi |
 | `LOCAL_SETUP_TOKEN` | Yalnızca localhost kurulum köprüsünü yetkilendiren rastgele yerel anahtar |
 | `DATABASE_PATH` | Yerel SQLite veritabanı dosya yolu (örn. `/var/lib/relaydesk/relaydesk.sqlite`) |
-| `SESSION_ENCRYPTION_KEY` | Telegram kullanıcı oturumunu şifreleyen Fernet anahtarı — bir SSH private key gibi korunmalı |
+| `SESSION_ENCRYPTION_KEY` | Telegram kullanıcı oturumunu şifreleyen Fernet anahtarı — aynı zamanda panelden eklenen bot token'larını şifrelemek için de kullanılır (HKDF ile ayrı bir anahtar türetilir); bir SSH private key gibi korunmalı |
+| `INTERNAL_API_SECRET` | Yalnızca localhost'a bağlı dahili API'leri (`/api/internal/*`) yetkilendiren gizli değer |
 
 Webhook yolu: `/api/telegram/webhook`

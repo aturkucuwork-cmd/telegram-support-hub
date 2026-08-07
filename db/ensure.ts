@@ -96,6 +96,38 @@ const statements = [
     ON conversations (last_message_at)`,
   `CREATE INDEX IF NOT EXISTS conversations_assignee_idx
     ON conversations (assigned_to_email)`,
+  `CREATE TABLE IF NOT EXISTS bots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    label TEXT NOT NULL,
+    telegram_bot_id TEXT NOT NULL,
+    username TEXT,
+    display_name TEXT,
+    token_ciphertext TEXT NOT NULL,
+    token_last_four TEXT NOT NULL,
+    is_enabled INTEGER NOT NULL DEFAULT 1,
+    last_validated_at TEXT,
+    last_poll_error_at TEXT,
+    last_poll_error TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS bots_telegram_bot_id_unique
+    ON bots (telegram_bot_id)`,
+  `CREATE INDEX IF NOT EXISTS bots_enabled_idx
+    ON bots (is_enabled)`,
+  `CREATE TABLE IF NOT EXISTS bot_group_assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bot_id INTEGER NOT NULL,
+    telegram_chat_id TEXT NOT NULL,
+    title TEXT,
+    source TEXT NOT NULL DEFAULT 'auto',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS bot_group_assignments_chat_unique
+    ON bot_group_assignments (telegram_chat_id)`,
+  `CREATE INDEX IF NOT EXISTS bot_group_assignments_bot_idx
+    ON bot_group_assignments (bot_id)`,
   `CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     conversation_id INTEGER NOT NULL,
@@ -178,6 +210,9 @@ export async function ensureSchema(): Promise<void> {
       db.prepare(
         "ALTER TABLE conversations ADD COLUMN assignment_folder_id INTEGER",
       ).run();
+    }
+    if (!columns.some((column) => column.name === "bot_id")) {
+      db.prepare("ALTER TABLE conversations ADD COLUMN bot_id INTEGER").run();
     }
     db.prepare(
       `CREATE INDEX IF NOT EXISTS conversations_assignment_folder_idx

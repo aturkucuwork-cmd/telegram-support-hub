@@ -183,9 +183,9 @@ export function parseContent(message: TelegramMessage): ParsedContent {
 export async function telegramApi<T>(
   method: string,
   payload: Record<string, unknown>,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; botToken?: string },
 ): Promise<T> {
-  const { botToken } = telegramConfig();
+  const botToken = options?.botToken ?? telegramConfig().botToken;
   if (!botToken) throw new Error("Telegram bot token henüz ayarlanmadı.");
 
   const response = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
@@ -210,8 +210,9 @@ export async function telegramApi<T>(
 export async function telegramMultipartApi<T>(
   method: string,
   form: FormData,
+  options?: { botToken?: string },
 ): Promise<T> {
-  const { botToken } = telegramConfig();
+  const botToken = options?.botToken ?? telegramConfig().botToken;
   if (!botToken) throw new Error("Telegram bot token henüz ayarlanmadı.");
 
   const response = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {

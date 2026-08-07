@@ -3,7 +3,7 @@ import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("builds the RelayDesk support application", async () => {
-  const [page, desk, setupWizard, localSetupApi, localSetupBridge, messageLogPanel, messageLogApi, folderPanel, folderApi, folderAssignments, userListener, reply, mediaReply, webhook, configure, statusLogic, worker] = await Promise.all([
+  const [page, desk, setupWizard, localSetupApi, localSetupBridge, messageLogPanel, messageLogApi, folderPanel, folderApi, folderAssignments, userListener, reply, mediaReply, webhook, configure, statusLogic, botsPanel, botsApi, worker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/support-desk.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/setup-wizard.tsx", import.meta.url), "utf8"),
@@ -20,6 +20,8 @@ test("builds the RelayDesk support application", async () => {
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/telegram/configure/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/status.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/bots-panel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/bots/route.ts", import.meta.url), "utf8"),
     access(new URL("../dist/server/index.js", import.meta.url)),
   ]);
 
@@ -58,6 +60,7 @@ test("builds the RelayDesk support application", async () => {
   assert.match(reply, /messageLogs/);
   assert.match(mediaReply, /reply_parameters/);
   assert.match(webhook, /x-telegram-bot-api-secret-token/);
+  assert.match(webhook, /x-relaydesk-bot-id/);
   assert.match(webhook, /business_message/);
   assert.match(webhook, /edited_message/);
   assert.match(webhook, /channel_post/);
@@ -67,6 +70,12 @@ test("builds the RelayDesk support application", async () => {
   assert.match(statusLogic, /groupMessageAccess/);
   assert.match(statusLogic, /userGroupListener/);
   assert.match(desk, /Takip edilen grup akışı bekleniyor/);
+  assert.match(desk, /botsOpen && actor\?\.role === "admin"/);
+  assert.match(desk, /<BotsPanel/);
+  assert.match(botsPanel, /TELEGRAM · BOT PERSONA’LARI/);
+  assert.match(botsApi, /requireAdmin/);
+  assert.match(botsApi, /tokenLastFour/);
+  assert.doesNotMatch(botsApi, /tokenCiphertext:\s*bots\.tokenCiphertext/);
   assert.equal(worker, undefined);
 });
 

@@ -75,6 +75,7 @@ export type TelegramFolderUser = {
 
 export type Message = {
   id: number;
+  conversationId: number;
   telegramMessageId: string;
   replyToTelegramMessageId: string | null;
   direction: "inbound" | "outbound";
@@ -98,6 +99,20 @@ export type MessageLog = {
   conversationTitle: string;
   messageText: string;
   sentAt: string;
+};
+
+export type Bot = {
+  id: number;
+  label: string;
+  telegramBotId: string;
+  username: string | null;
+  displayName: string | null;
+  tokenLastFour: string;
+  isEnabled: boolean;
+  lastValidatedAt: string | null;
+  lastPollErrorAt: string | null;
+  lastPollError: string | null;
+  groupCount: number;
 };
 
 export type MessageLogUser = {
